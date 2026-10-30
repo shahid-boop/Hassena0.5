@@ -225,6 +225,26 @@ class AIService(
         val recoveryAction: String? = null
     )
 
+    suspend fun generatePureTextResponse(
+        provider: AIProviderType,
+        modelId: String,
+        systemPrompt: String,
+        userPrompt: String
+    ): StreamCompletionOutcome = withContext(Dispatchers.IO) {
+        streamResponse(
+            provider = provider,
+            modelId = modelId,
+            prompt = userPrompt,
+            history = emptyList(),
+            personality = AssistantPersonality.TECHNICAL_EXPERT,
+            memoryContextPrompt = "",
+            imageBitmap = null,
+            executeToolDirectives = false,
+            customSystemPrompt = systemPrompt,
+            onChunk = { _, _, _ -> }
+        )
+    }
+
     suspend fun streamResponse(
         provider: AIProviderType,
         modelId: String,
@@ -233,6 +253,8 @@ class AIService(
         personality: AssistantPersonality,
         memoryContextPrompt: String,
         imageBitmap: Bitmap? = null,
+        executeToolDirectives: Boolean = true,
+        customSystemPrompt: String? = null,
         onChunk: suspend (deltaText: String, accumulatedText: String, firstTokenLatencyMs: Long) -> Unit
     ): StreamCompletionOutcome = withContext(Dispatchers.IO) {
         val startMs = System.currentTimeMillis()
@@ -255,7 +277,7 @@ class AIService(
             )
         }
 
-        val systemInstructionText = buildSystemPrompt(personality, memoryContextPrompt)
+        val systemInstructionText = customSystemPrompt ?: buildSystemPrompt(personality, memoryContextPrompt, includeToolDirectives = executeToolDirectives)
 
         var lastException: Exception? = null
         val maxAttempts = 2
@@ -304,9 +326,13 @@ class AIService(
                 }
 
                 val rawFull = accumulated.toString().trim()
-                val executedTools = executeEmbeddedToolDirectives(rawFull)
-                val cleanFinalText = stripToolTags(rawFull).ifBlank {
-                    if (executedTools.isNotEmpty()) executedTools.joinToString(" ") else "Done."
+                val executedTools = if (executeToolDirectives) executeEmbeddedToolDirectives(rawFull) else emptyList()
+                val cleanFinalText = if (executeToolDirectives) {
+                    stripToolTags(rawFull).ifBlank {
+                        if (executedTools.isNotEmpty()) executedTools.joinToString(" ") else "Done."
+                    }
+                } else {
+                    rawFull
                 }
                 val totalMs = (System.currentTimeMillis() - startMs).coerceAtLeast(1L)
 
@@ -569,7 +595,8 @@ class AIService(
 
     private fun buildSystemPrompt(
         personality: AssistantPersonality,
-        memoryContextPrompt: String
+        memoryContextPrompt: String,
+        includeToolDirectives: Boolean = true
     ): String {
         val telemetry = controlService.getDeviceTelemetry()
         return buildString {
@@ -579,9 +606,11 @@ class AIService(
             append("- Battery: ${telemetry.batteryPercent}% (Charging: ${telemetry.isCharging})\n")
             append("- Network: ${telemetry.networkTypeLabel}\n")
             append("- Media Volume: ${telemetry.musicVolumePercent}% | Brightness: ${telemetry.screenBrightnessPercent}%\n")
-            append("\n[REAL ANDROID TOOL TAGS]\n")
-            append("If the user's request includes performing a supported hardware action alongside a question, you may append one of these tags at the very end of your response so JARVIS executes it immediately:\n")
-            append("[TOOL:FLASHLIGHT_ON], [TOOL:FLASHLIGHT_OFF], [TOOL:VOLUME_UP], [TOOL:VOLUME_DOWN], [TOOL:OPEN_APP:AppName], [TOOL:BRIGHTNESS:50]\n")
+            if (includeToolDirectives) {
+                append("\n[REAL ANDROID TOOL TAGS]\n")
+                append("If the user's request includes performing a supported hardware action alongside a question, you may append one of these tags at the very end of your response so JARVIS executes it immediately:\n")
+                append("[TOOL:FLASHLIGHT_ON], [TOOL:FLASHLIGHT_OFF], [TOOL:VOLUME_UP], [TOOL:VOLUME_DOWN], [TOOL:OPEN_APP:AppName], [TOOL:BRIGHTNESS:50]\n")
+            }
             if (memoryContextPrompt.isNotBlank()) {
                 append(memoryContextPrompt)
             }

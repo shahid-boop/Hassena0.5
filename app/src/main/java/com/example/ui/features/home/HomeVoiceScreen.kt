@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PrecisionManufacturing
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material.icons.filled.TravelExplore
@@ -143,6 +144,7 @@ fun HomeVoiceScreen(
     onOpenControls: () -> Unit = {},
     onOpenProviders: () -> Unit = {},
     onOpenAvatar3D: () -> Unit = {},
+    onOpenAgent: () -> Unit = {},
     onSelectActiveModel: (AIProviderType, String) -> Unit = { _, _ -> }
 ) {
     var commandText by rememberSaveable { mutableStateOf("") }
@@ -458,6 +460,66 @@ fun HomeVoiceScreen(
                     tint = QuantumViolet,
                     onClick = onOpenControls
                 )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenAgent() }
+                    .border(1.dp, CyberCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+                    .testTag("home_autonomous_agent_tile"),
+                colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(CyberCyan.copy(alpha = 0.15f), CircleShape)
+                            .border(1.dp, CyberCyan, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = null,
+                            tint = CyberCyan,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Autonomous Agent Mode",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(CyberCyan.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                            ) {
+                                Text(text = "NEW", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = CyberCyan)
+                            }
+                        }
+                        Text(
+                            text = "Multi-step planning, tool execution, & real Android telemetry",
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
             }
         }
 

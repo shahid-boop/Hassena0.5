@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.PrecisionManufacturing
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TravelExplore
@@ -92,6 +93,7 @@ import com.example.models.AIProviderType
 import com.example.providers.HasseenaDestination
 import com.example.providers.HasseenaViewModel
 import com.example.services.android.AndroidControlService
+import com.example.ui.features.agent.AutonomousAgentScreen
 import com.example.ui.features.android_controls.AndroidControlsScreen
 import com.example.ui.features.automation.AutomationScreen
 import com.example.ui.features.avatar3d.Avatar3DScreen
@@ -268,6 +270,7 @@ fun HasseenaAssistantApp(
     // Side Navigation Rail Items for Expanded Screens / Foldables / Tablets
     val railNavItems = listOf(
         Triple(HasseenaDestination.HOME, "Home", Icons.Default.Home),
+        Triple(HasseenaDestination.AUTONOMOUS_AGENT, "Agent", Icons.Default.Psychology),
         Triple(HasseenaDestination.AVATAR_3D, "3D Avatar", Icons.Default.GraphicEq),
         Triple(HasseenaDestination.CHAT, "Chat", Icons.AutoMirrored.Filled.Chat),
         Triple(HasseenaDestination.VOICE, "Voice", Icons.Default.Mic),
@@ -307,6 +310,7 @@ fun HasseenaAssistantApp(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     val hubModules = listOf(
+                        Triple(HasseenaDestination.AUTONOMOUS_AGENT, "Autonomous Agent", "Multi-step planner & real device tool execution"),
                         Triple(HasseenaDestination.AVATAR_3D, "3D Female Assistant", "Realistic 3D specialist & dual-monitor workstation"),
                         Triple(HasseenaDestination.CODING, "Coding Studio", "Syntax editing & code intelligence"),
                         Triple(HasseenaDestination.RAG_KNOWLEDGE, "RAG Knowledge", "Document grounding & citations"),
@@ -345,6 +349,7 @@ fun HasseenaAssistantApp(
                                 ) {
                                     Icon(
                                         imageVector = when (dest) {
+                                            HasseenaDestination.AUTONOMOUS_AGENT -> Icons.Default.Psychology
                                             HasseenaDestination.AVATAR_3D -> Icons.Default.GraphicEq
                                             HasseenaDestination.CODING -> Icons.Default.Code
                                             HasseenaDestination.RAG_KNOWLEDGE -> Icons.Default.AutoAwesome
@@ -535,6 +540,9 @@ fun HasseenaAssistantApp(
                             },
                             onOpenAvatar3D = {
                                 viewModel.navigateTo(HasseenaDestination.AVATAR_3D)
+                            },
+                            onOpenAgent = {
+                                viewModel.navigateTo(HasseenaDestination.AUTONOMOUS_AGENT)
                             },
                             onSelectActiveModel = { provider, modelId ->
                                 viewModel.selectActiveModel(provider, modelId)
@@ -759,6 +767,11 @@ fun HasseenaAssistantApp(
                         )
 
                         HasseenaDestination.AVATAR_3D -> Avatar3DScreen(
+                            viewModel = viewModel,
+                            onNavigateBack = { viewModel.navigateTo(HasseenaDestination.HOME) }
+                        )
+
+                        HasseenaDestination.AUTONOMOUS_AGENT -> AutonomousAgentScreen(
                             viewModel = viewModel,
                             onNavigateBack = { viewModel.navigateTo(HasseenaDestination.HOME) }
                         )

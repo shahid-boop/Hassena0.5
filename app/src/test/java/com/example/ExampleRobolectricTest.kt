@@ -122,4 +122,130 @@ class ExampleRobolectricTest {
         val memories = repo.getUserCloudMemories().getOrThrow()
         assertTrue(memories.isEmpty())
     }
+
+    @Test
+    fun `autonomous agent tool registry contains all required tools and enforces sensitive permissions`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService
+        )
+
+        val toolIds = registry.toolSpecs.map { it.toolId }.toSet()
+        val expectedTools = setOf(
+            "web_search", "deep_research", "search_knowledge", "save_memory",
+            "get_device_telemetry", "set_flashlight", "set_volume", "set_brightness",
+            "launch_app", "open_url", "list_installed_apps", "read_active_notifications",
+            "set_timer_alarm", "place_phone_call", "compose_sms", "synthesize_report"
+        )
+        assertTrue(toolIds.containsAll(expectedTools))
+
+        // Check sensitive actions require confirmation
+        val callTool = registry.getToolSpec("place_phone_call")
+        assertTrue(callTool != null && callTool.requiresConfirmation)
+
+        val smsTool = registry.getToolSpec("compose_sms")
+        assertTrue(smsTool != null && smsTool.requiresConfirmation)
+
+        val teleTool = registry.getToolSpec("get_device_telemetry")
+        assertTrue(teleTool != null && !teleTool.requiresConfirmation)
+    }
+
+    @Test
+    fun `autonomous agent real tool execution returns real telemetry and handles controls`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService
+        )
+
+        // Test telemetry execution
+        val teleRes = registry.executeTool("get_device_telemetry", emptyMap()) {}
+        assertTrue(teleRes.success)
+        assertTrue(teleRes.output.contains("Battery Level:"))
+        assertTrue(teleRes.output.contains("RAM:"))
+
+        // Test volume execution
+        val volRes = registry.executeTool("set_volume", mapOf("percent" to "70")) {}
+        assertTrue(volRes.success)
+
+        // Test brightness execution
+        val brightRes = registry.executeTool("set_brightness", mapOf("percent" to "80")) {}
+        assertTrue(brightRes.success)
+
+        // Test knowledge save and search
+        val saveRes = registry.executeTool(
+            "save_memory",
+            mapOf("category" to "PREFERENCE", "content" to "Autonomous agent test memory item")
+        ) {}
+        assertTrue(saveRes.success)
+
+        val searchRes = registry.executeTool("search_knowledge", mapOf("query" to "Autonomous")) {}
+        assertTrue(searchRes.success)
+    }
+
+    @Test
+    fun `autonomous agent task persistence in SQLite database`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+
+        val step1 = com.example.models.AgentStep(
+            id = "test_task_step_1",
+            stepNumber = 1,
+            title = "Read Telemetry",
+            description = "Read battery and storage",
+            toolId = "get_device_telemetry",
+            status = com.example.models.AutonomousStepStatus.COMPLETED,
+            actualResult = "Battery: 100%"
+        )
+        val task = com.example.models.AgentTask(
+            id = "test_task_001",
+            title = "Test System Health Audit",
+            userObjective = "Check system telemetry",
+            executionPlanOverview = "Read telemetry step by step",
+            steps = listOf(step1),
+            status = com.example.models.AgentTaskStatus.COMPLETED,
+            finalResponse = "Audit complete. All systems nominal."
+        )
+
+        memory.saveAgentTask(task)
+
+        val retrieved = memory.getAgentTask("test_task_001")
+        assertTrue(retrieved != null)
+        assertEquals("test_task_001", retrieved?.id)
+        assertEquals("Test System Health Audit", retrieved?.title)
+        assertEquals(1, retrieved?.steps?.size)
+        assertEquals("Read Telemetry", retrieved?.steps?.first()?.title)
+        assertEquals(com.example.models.AutonomousStepStatus.COMPLETED, retrieved?.steps?.first()?.status)
+
+        // Delete task
+        memory.deleteAgentTask("test_task_001")
+        val afterDelete = memory.getAgentTask("test_task_001")
+        assertTrue(afterDelete == null)
+    }
 }

@@ -4,11 +4,17 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.models.AgentStep
+import com.example.models.AutonomousStepStatus
+import com.example.models.AgentTask
+import com.example.models.AgentTaskStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 data class ChatMessageEntity(
     val id: Long = 0,
@@ -103,16 +109,25 @@ interface HasseenaDao {
     suspend fun insertKnowledgeItem(item: KnowledgeItemEntity): Long
     suspend fun searchKnowledge(query: String): List<KnowledgeItemEntity>
     suspend fun deleteKnowledgeItemById(id: Long)
+
+    fun observeAgentTasks(): Flow<List<AgentTask>>
+    suspend fun getAgentTasks(): List<AgentTask>
+    suspend fun getAgentTask(taskId: String): AgentTask?
+    suspend fun insertOrUpdateAgentTask(task: AgentTask)
+    suspend fun insertOrUpdateAgentStep(step: AgentStep, taskId: String)
+    suspend fun deleteAgentTask(taskId: String)
 }
 
 class HasseenaDatabase private constructor(context: Context) :
     SQLiteOpenHelper(context.applicationContext, "hasseena_ai_assistant.db", null, 1) {
 
+    private val json = Json { ignoreUnknownKeys = true }
     private val messagesState = MutableStateFlow<List<ChatMessageEntity>>(emptyList())
     private val memoryFactsState = MutableStateFlow<List<MemoryFactEntity>>(emptyList())
     private val cacheCountState = MutableStateFlow(0)
     private val automationTasksState = MutableStateFlow<List<AutomationTaskEntity>>(emptyList())
     private val knowledgeItemsState = MutableStateFlow<List<KnowledgeItemEntity>>(emptyList())
+    private val agentTasksState = MutableStateFlow<List<AgentTask>>(emptyList())
 
     private val daoImpl = object : HasseenaDao {
         override fun observeMessages(): Flow<List<ChatMessageEntity>> = messagesState.asStateFlow()
@@ -343,15 +358,104 @@ class HasseenaDatabase private constructor(context: Context) :
             writableDatabase.delete("knowledge_items", "id = ?", arrayOf(id.toString()))
             refreshKnowledgeItemsStateInternal()
         }
+
+        override fun observeAgentTasks(): Flow<List<AgentTask>> = agentTasksState.asStateFlow()
+
+        override suspend fun getAgentTasks(): List<AgentTask> = withContext(Dispatchers.IO) {
+            queryAgentTasksInternal()
+        }
+
+        override suspend fun getAgentTask(taskId: String): AgentTask? = withContext(Dispatchers.IO) {
+            queryAgentTaskByIdInternal(taskId)
+        }
+
+        override suspend fun insertOrUpdateAgentTask(task: AgentTask) = withContext(Dispatchers.IO) {
+            val db = writableDatabase
+            db.beginTransaction()
+            try {
+                val cv = ContentValues().apply {
+                    put("id", task.id)
+                    put("title", task.title)
+                    put("userObjective", task.userObjective)
+                    put("executionPlanOverview", task.executionPlanOverview)
+                    put("status", task.status.name)
+                    put("finalResponse", task.finalResponse)
+                    put("errorInformation", task.errorInformation)
+                    put("replanCount", task.replanCount)
+                    put("currentStepIndex", task.currentStepIndex)
+                    put("startTime", task.startTime)
+                    put("completionTime", task.completionTime)
+                    put("logsJson", json.encodeToString(task.logs))
+                }
+                db.insertWithOnConflict("agent_tasks", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
+                for (step in task.steps) {
+                    val scv = ContentValues().apply {
+                        put("id", step.id)
+                        put("taskId", task.id)
+                        put("stepNumber", step.stepNumber)
+                        put("title", step.title)
+                        put("description", step.description)
+                        put("toolId", step.toolId)
+                        put("toolArgumentsJson", json.encodeToString(step.toolArguments))
+                        put("requiresConfirmation", if (step.requiresConfirmation) 1 else 0)
+                        put("status", step.status.name)
+                        put("actualResult", step.actualResult)
+                        put("errorMessage", step.errorMessage)
+                        put("startTime", step.startTime)
+                        put("completionTime", step.completionTime)
+                    }
+                    db.insertWithOnConflict("agent_steps", null, scv, SQLiteDatabase.CONFLICT_REPLACE)
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+            refreshAgentTasksStateInternal()
+        }
+
+        override suspend fun insertOrUpdateAgentStep(step: AgentStep, taskId: String) = withContext(Dispatchers.IO) {
+            val scv = ContentValues().apply {
+                put("id", step.id)
+                put("taskId", taskId)
+                put("stepNumber", step.stepNumber)
+                put("title", step.title)
+                put("description", step.description)
+                put("toolId", step.toolId)
+                put("toolArgumentsJson", json.encodeToString(step.toolArguments))
+                put("requiresConfirmation", if (step.requiresConfirmation) 1 else 0)
+                put("status", step.status.name)
+                put("actualResult", step.actualResult)
+                put("errorMessage", step.errorMessage)
+                put("startTime", step.startTime)
+                put("completionTime", step.completionTime)
+            }
+            writableDatabase.insertWithOnConflict("agent_steps", null, scv, SQLiteDatabase.CONFLICT_REPLACE)
+            refreshAgentTasksStateInternal()
+        }
+
+        override suspend fun deleteAgentTask(taskId: String) = withContext(Dispatchers.IO) {
+            val db = writableDatabase
+            db.beginTransaction()
+            try {
+                db.delete("agent_steps", "taskId = ?", arrayOf(taskId))
+                db.delete("agent_tasks", "id = ?", arrayOf(taskId))
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+            refreshAgentTasksStateInternal()
+        }
     }
 
     init {
         ensureAutomationAndKnowledgeTables(writableDatabase)
+        ensureAgentTables(writableDatabase)
         refreshMessagesStateInternal()
         refreshMemoryFactsStateInternal()
         refreshCacheCountStateInternal()
         refreshAutomationTasksStateInternal()
         refreshKnowledgeItemsStateInternal()
+        refreshAgentTasksStateInternal()
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -396,6 +500,7 @@ class HasseenaDatabase private constructor(context: Context) :
             """.trimIndent()
         )
         ensureAutomationAndKnowledgeTables(db)
+        ensureAgentTables(db)
     }
 
     private fun ensureAutomationAndKnowledgeTables(db: SQLiteDatabase) {
@@ -545,6 +650,8 @@ class HasseenaDatabase private constructor(context: Context) :
         db.execSQL("DROP TABLE IF EXISTS response_cache")
         db.execSQL("DROP TABLE IF EXISTS automation_tasks")
         db.execSQL("DROP TABLE IF EXISTS knowledge_items")
+        db.execSQL("DROP TABLE IF EXISTS agent_steps")
+        db.execSQL("DROP TABLE IF EXISTS agent_tasks")
         onCreate(db)
     }
 
@@ -729,6 +836,232 @@ class HasseenaDatabase private constructor(context: Context) :
             }
         }
         return list
+    }
+
+    private fun ensureAgentTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS agent_tasks (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                userObjective TEXT NOT NULL,
+                executionPlanOverview TEXT NOT NULL,
+                status TEXT NOT NULL,
+                finalResponse TEXT,
+                errorInformation TEXT,
+                replanCount INTEGER NOT NULL,
+                currentStepIndex INTEGER NOT NULL,
+                startTime INTEGER NOT NULL,
+                completionTime INTEGER,
+                logsJson TEXT NOT NULL
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS agent_steps (
+                id TEXT PRIMARY KEY,
+                taskId TEXT NOT NULL,
+                stepNumber INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                toolId TEXT NOT NULL,
+                toolArgumentsJson TEXT NOT NULL,
+                requiresConfirmation INTEGER NOT NULL,
+                status TEXT NOT NULL,
+                actualResult TEXT,
+                errorMessage TEXT,
+                startTime INTEGER,
+                completionTime INTEGER
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun refreshAgentTasksStateInternal() {
+        agentTasksState.value = queryAgentTasksInternal()
+    }
+
+    private fun queryAgentTasksInternal(): List<AgentTask> {
+        val tasks = mutableListOf<AgentTask>()
+        try {
+            readableDatabase.query(
+                "agent_tasks",
+                arrayOf(
+                    "id", "title", "userObjective", "executionPlanOverview",
+                    "status", "finalResponse", "errorInformation",
+                    "replanCount", "currentStepIndex", "startTime",
+                    "completionTime", "logsJson"
+                ),
+                null, null, null, null,
+                "startTime DESC"
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val taskId = cursor.getString(0)
+                    val title = cursor.getString(1)
+                    val objective = cursor.getString(2)
+                    val overview = cursor.getString(3)
+                    val statusStr = cursor.getString(4)
+                    val status = try {
+                        AgentTaskStatus.valueOf(statusStr)
+                    } catch (_: Exception) {
+                        AgentTaskStatus.COMPLETED
+                    }
+                    val finalResponse = if (cursor.isNull(5)) null else cursor.getString(5)
+                    val errorInfo = if (cursor.isNull(6)) null else cursor.getString(6)
+                    val replanCount = cursor.getInt(7)
+                    val currentStepIndex = cursor.getInt(8)
+                    val startTime = cursor.getLong(9)
+                    val completionTime = if (cursor.isNull(10)) null else cursor.getLong(10)
+                    val logsJson = cursor.getString(11) ?: "[]"
+                    val logs: List<String> = try {
+                        json.decodeFromString(logsJson)
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+
+                    val steps = queryAgentStepsForTaskInternal(taskId)
+                    tasks.add(
+                        AgentTask(
+                            id = taskId,
+                            title = title,
+                            userObjective = objective,
+                            executionPlanOverview = overview,
+                            steps = steps,
+                            status = status,
+                            finalResponse = finalResponse,
+                            errorInformation = errorInfo,
+                            replanCount = replanCount,
+                            currentStepIndex = currentStepIndex,
+                            startTime = startTime,
+                            completionTime = completionTime,
+                            logs = logs
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return tasks
+    }
+
+    private fun queryAgentTaskByIdInternal(taskId: String): AgentTask? {
+        try {
+            readableDatabase.query(
+                "agent_tasks",
+                arrayOf(
+                    "id", "title", "userObjective", "executionPlanOverview",
+                    "status", "finalResponse", "errorInformation",
+                    "replanCount", "currentStepIndex", "startTime",
+                    "completionTime", "logsJson"
+                ),
+                "id = ?", arrayOf(taskId), null, null, null
+            ).use { cursor ->
+                if (cursor.moveToNext()) {
+                    val title = cursor.getString(1)
+                    val objective = cursor.getString(2)
+                    val overview = cursor.getString(3)
+                    val statusStr = cursor.getString(4)
+                    val status = try {
+                        AgentTaskStatus.valueOf(statusStr)
+                    } catch (_: Exception) {
+                        AgentTaskStatus.COMPLETED
+                    }
+                    val finalResponse = if (cursor.isNull(5)) null else cursor.getString(5)
+                    val errorInfo = if (cursor.isNull(6)) null else cursor.getString(6)
+                    val replanCount = cursor.getInt(7)
+                    val currentStepIndex = cursor.getInt(8)
+                    val startTime = cursor.getLong(9)
+                    val completionTime = if (cursor.isNull(10)) null else cursor.getLong(10)
+                    val logsJson = cursor.getString(11) ?: "[]"
+                    val logs: List<String> = try {
+                        json.decodeFromString(logsJson)
+                    } catch (_: Exception) {
+                        emptyList()
+                    }
+
+                    val steps = queryAgentStepsForTaskInternal(taskId)
+                    return AgentTask(
+                        id = taskId,
+                        title = title,
+                        userObjective = objective,
+                        executionPlanOverview = overview,
+                        steps = steps,
+                        status = status,
+                        finalResponse = finalResponse,
+                        errorInformation = errorInfo,
+                        replanCount = replanCount,
+                        currentStepIndex = currentStepIndex,
+                        startTime = startTime,
+                        completionTime = completionTime,
+                        logs = logs
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return null
+    }
+
+    private fun queryAgentStepsForTaskInternal(taskId: String): List<AgentStep> {
+        val steps = mutableListOf<AgentStep>()
+        try {
+            readableDatabase.query(
+                "agent_steps",
+                arrayOf(
+                    "id", "stepNumber", "title", "description",
+                    "toolId", "toolArgumentsJson", "requiresConfirmation",
+                    "status", "actualResult", "errorMessage",
+                    "startTime", "completionTime"
+                ),
+                "taskId = ?", arrayOf(taskId), null, null,
+                "stepNumber ASC"
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0)
+                    val stepNumber = cursor.getInt(1)
+                    val title = cursor.getString(2)
+                    val description = cursor.getString(3)
+                    val toolId = cursor.getString(4)
+                    val toolArgsJson = cursor.getString(5) ?: "{}"
+                    val toolArgs: Map<String, String> = try {
+                        json.decodeFromString(toolArgsJson)
+                    } catch (_: Exception) {
+                        emptyMap()
+                    }
+                    val requiresConfirmation = cursor.getInt(6) != 0
+                    val statusStr = cursor.getString(7)
+                    val status = try {
+                        AutonomousStepStatus.valueOf(statusStr)
+                    } catch (_: Exception) {
+                        AutonomousStepStatus.PENDING
+                    }
+                    val actualResult = if (cursor.isNull(8)) null else cursor.getString(8)
+                    val errorMessage = if (cursor.isNull(9)) null else cursor.getString(9)
+                    val startTime = if (cursor.isNull(10)) null else cursor.getLong(10)
+                    val completionTime = if (cursor.isNull(11)) null else cursor.getLong(11)
+
+                    steps.add(
+                        AgentStep(
+                            id = id,
+                            stepNumber = stepNumber,
+                            title = title,
+                            description = description,
+                            toolId = toolId,
+                            toolArguments = toolArgs,
+                            requiresConfirmation = requiresConfirmation,
+                            status = status,
+                            actualResult = actualResult,
+                            errorMessage = errorMessage,
+                            startTime = startTime,
+                            completionTime = completionTime
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return steps
     }
 
     companion object {

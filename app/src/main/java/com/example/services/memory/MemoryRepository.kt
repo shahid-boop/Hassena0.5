@@ -1,5 +1,7 @@
 package com.example.services.memory
 
+import com.example.models.AgentStep
+import com.example.models.AgentTask
 import kotlinx.coroutines.flow.Flow
 import java.util.Locale
 
@@ -10,6 +12,13 @@ class MemoryRepository(private val dao: HasseenaDao) {
     val cacheCountFlow: Flow<Int> = dao.observeCacheCount()
     val automationTasksFlow: Flow<List<AutomationTaskEntity>> = dao.observeAutomationTasks()
     val knowledgeItemsFlow: Flow<List<KnowledgeItemEntity>> = dao.observeKnowledgeItems()
+    val agentTasksFlow: Flow<List<AgentTask>> = dao.observeAgentTasks()
+
+    suspend fun getAgentTasks(): List<AgentTask> = dao.getAgentTasks()
+    suspend fun getAgentTask(taskId: String): AgentTask? = dao.getAgentTask(taskId)
+    suspend fun saveAgentTask(task: AgentTask) = dao.insertOrUpdateAgentTask(task)
+    suspend fun saveAgentStep(step: AgentStep, taskId: String) = dao.insertOrUpdateAgentStep(step, taskId)
+    suspend fun deleteAgentTask(taskId: String) = dao.deleteAgentTask(taskId)
 
     suspend fun getAutomationTasks(): List<AutomationTaskEntity> = dao.getAutomationTasks()
     suspend fun addAutomationTask(task: AutomationTaskEntity): Long = dao.insertAutomationTask(task)

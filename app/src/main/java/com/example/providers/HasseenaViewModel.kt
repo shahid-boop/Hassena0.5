@@ -22,7 +22,13 @@ import com.example.models.AutonomousTaskPlan
 import com.example.models.CodingCheckpoint
 import com.example.models.RepairLoopAttempt
 import com.example.models.SelfRepairSession
+import com.example.models.AgentStep
+import com.example.models.AgentStepStatus
+import com.example.models.AgentTask
+import com.example.models.AgentTaskStatus
 import com.example.services.accessibility.HasseenaAccessibilityService
+import com.example.services.agent.AgentToolRegistry
+import com.example.services.agent.AutonomousAgentEngine
 import com.example.services.ai.AIModelRouter
 import com.example.services.ai.AIService
 import com.example.services.ai.ApiKeyStore
@@ -59,6 +65,7 @@ enum class HasseenaDestination(val route: String, val label: String) {
     HOME("home", "Home"),
     CHAT("chat", "Chat"),
     VOICE("voice", "Voice"),
+    AUTONOMOUS_AGENT("autonomous_agent", "Autonomous Agent"),
     CODING("coding", "Coding"),
     FILE_WORKSPACE("file_workspace", "Files"),
     RAG_KNOWLEDGE("rag_knowledge", "Knowledge"),
@@ -93,6 +100,70 @@ class HasseenaViewModel(application: Application) : AndroidViewModel(application
     val autonomousPlan: StateFlow<AutonomousTaskPlan?> = autonomousCodingEngine.currentPlan
     val selfRepairSession: StateFlow<SelfRepairSession?> = autonomousCodingEngine.repairSession
     val codingTelemetryLogs: StateFlow<List<String>> = autonomousCodingEngine.telemetryLogs
+
+    // Autonomous Agent Engine
+    val agentToolRegistry = AgentToolRegistry(
+        context = application,
+        androidControlService = androidControlService,
+        appLauncherService = appLauncherService,
+        webResearchService = webResearchService,
+        memoryRepository = memoryRepository,
+        aiService = aiService
+    )
+
+    val autonomousAgentEngine = AutonomousAgentEngine(
+        aiService = aiService,
+        toolRegistry = agentToolRegistry,
+        memoryRepository = memoryRepository,
+        scope = viewModelScope
+    )
+
+    val currentAgentTask: StateFlow<AgentTask?> = autonomousAgentEngine.currentTask
+    val agentLogs: StateFlow<List<String>> = autonomousAgentEngine.liveLogs
+    val agentTasksHistory: StateFlow<List<AgentTask>> = memoryRepository.agentTasksFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    fun submitAgentObjective(objective: String) {
+        autonomousAgentEngine.startPlanning(objective)
+    }
+
+    fun approveAgentPlan() {
+        autonomousAgentEngine.approveAndExecute()
+    }
+
+    fun pauseAgent() {
+        autonomousAgentEngine.pause()
+    }
+
+    fun resumeAgent() {
+        autonomousAgentEngine.resume()
+    }
+
+    fun cancelAgent() {
+        autonomousAgentEngine.cancel()
+    }
+
+    fun retryAgentStep(stepNumber: Int) {
+        autonomousAgentEngine.retryStep(stepNumber)
+    }
+
+    fun confirmAgentPendingStep(approved: Boolean) {
+        autonomousAgentEngine.confirmPendingStep(approved)
+    }
+
+    fun loadAgentTask(task: AgentTask) {
+        autonomousAgentEngine.loadTask(task)
+    }
+
+    fun deleteAgentTask(taskId: String) {
+        viewModelScope.launch {
+            memoryRepository.deleteAgentTask(taskId)
+        }
+    }
 
     fun testElevenLabsVoice(voiceId: String, onResult: (Boolean, String) -> Unit) {
         voiceService.testElevenLabsVoice(voiceId, onResult)
