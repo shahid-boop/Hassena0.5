@@ -1,0 +1,11 @@
+{
+  "name": "HASASENA A1",
+  "description": "A professional, fully functional Android AI suite featuring native UI, secure model integration, and robust task automation capabilities.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidCloudMemoryFact(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.category is string && data.category in ['PREFERENCE', 'FACT', 'INSTRUCTION', 'HABIT'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 2000 &&
+             data.source is string && data.source.size() >= 1 && data.source.size() <= 120 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCloudChatMessage(data) {
+      return data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128 &&
+             data.role is string && data.role in ['user', 'assistant', 'tool'] &&
+             data.content is string && data.content.size() >= 1 && data.content.size() <= 8000 &&
+             data.providerName is string && data.providerName.size() >= 1 && data.providerName.size() <= 120 &&
+             data.modelName is string && data.modelName.size() >= 1 && data.modelName.size() <= 120 &&
+             data.routeCategory is string && data.routeCategory.size() >= 1 && data.routeCategory.size() <= 120 &&
+             data.latencyMs is int && data.latencyMs >= 0 && data.latencyMs <= 600000 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // 4. Per-User Cloud Memories Collection
+    match /users/{userId}/memories/{memoryId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(memoryId);
+      allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       isValidId(memoryId) &&
+                       incoming().keys().hasAll(['userId', 'category', 'content', 'source', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'category', 'content', 'source', 'createdAt', 'updatedAt']) &&
+                       isValidCloudMemoryFact(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidCloudMemoryFact(incoming()) &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       isValidId(memoryId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['category', 'content', 'source', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(memoryId);
+    }
+
+    // 5. Per-User Cloud Conversation Messages Collection
+    match /users/{userId}/messages/{messageId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(messageId);
+      allow list: if isSignedIn() && request.auth.uid == userId && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       isValidId(messageId) &&
+                       incoming().keys().hasAll(['userId', 'role', 'content', 'providerName', 'modelName', 'routeCategory', 'latencyMs', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'role', 'content', 'providerName', 'modelName', 'routeCategory', 'latencyMs', 'createdAt']) &&
+                       isValidCloudChatMessage(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidCloudChatMessage(incoming()) &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       isValidId(messageId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().role == existing().role &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['content', 'latencyMs']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId) && isValidId(messageId);
+    }
+  }
+}

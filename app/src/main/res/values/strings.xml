@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">HASASENA A1</string>
+    <string name="accessibility_service_label">JARVIS Screen &amp; Action Assistant</string>
+    <string name="accessibility_service_description">Allows JARVIS AI Assistant to read on-screen text, navigate supported interfaces, scroll, go back, take screenshots, and perform user-requested UI actions when explicitly commanded by you. JARVIS never records or accesses screen data covertly.</string>
+    <string name="notification_service_label">JARVIS Notification Assistant</string>
+    <string name="security_prototype_warning">Security Warning: API keys configured via BuildConfig are packaged into this prototype APK. Android APKs can be decompiled; do not share this APK publicly.</string>
+</resources>

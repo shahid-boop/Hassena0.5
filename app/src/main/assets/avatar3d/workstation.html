@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>HASASENA 3D Workstation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #050914; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        #hud-overlay { position: absolute; top: 12px; left: 12px; z-index: 10; pointer-events: none; color: #7de7ff; font-size: 11px; text-shadow: 0 0 8px rgba(0,240,255,0.6); letter-spacing: 1px; font-weight: 600; }
+        #hud-overlay .badge { display: inline-block; padding: 3px 8px; background: rgba(5, 18, 38, 0.75); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 6px; margin-bottom: 4px; }
+        #task-banner { position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 10; pointer-events: none; display: flex; justify-content: space-between; align-items: center; color: #eaf2ff; font-size: 12px; background: rgba(8, 16, 32, 0.85); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 10px; padding: 8px 14px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .pulse-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 10px #00f0ff; margin-right: 6px; animation: pulse 1.6s infinite ease-in-out; }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.2); } }
+    </style>
+    <script src="three.min.js"></script>
+    <script src="GLTFLoader.js"></script>
+</head>
+<body>
+    <div id="hud-overlay">
+        <div class="badge"><span class="pulse-dot"></span>HASASENA A1 • 3D WORKSTATION</div>
+        <div id="status-activity" style="color: #a4b8d3;">STATE: IDLE</div>
+    </div>
+    <div id="task-banner">
+        <span id="task-name" style="font-weight: 600;">System Ready</span>
+        <span id="task-meta" style="color: #00f0ff; font-size: 11px;">STANDBY</span>
+    </div>
+    <div id="canvas-container"></div>
+
+    <script>
+    (function() {
+        // --- 1. Scene & Renderer Initialization ---
+        const container = document.getElementById('canvas-container');
+        const statusEl = document.getElementById('status-activity');
+        const taskNameEl = document.getElementById('task-name');
+        const taskMetaEl = document.getElementById('task-meta');
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050914, 0.045);
+
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.15;
+        container.appendChild(renderer.domElement);
+
+        // --- 2. Lighting Rig (High-Tech Cinematic Studio) ---
+        const ambientLight = new THREE.HemisphereLight(0x283b5b, 0x050a14, 0.85);
+        scene.add(ambientLight);
+
+        // Key light (warm, flattering female portrait light)
+        const keyLight = new THREE.DirectionalLight(0xfff3e6, 1.4);
+        keyLight.position.set(1.8, 3.2, 2.8);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 1024;
+        keyLight.shadow.mapSize.height = 1024;
+        keyLight.shadow.camera.near = 0.5;
+        keyLight.shadow.camera.far = 10;
+        keyLight.shadow.bias = -0.001;
+        scene.add(keyLight);
+
+        // Fill light (cyan workstation bounce)
+        const fillLight = new THREE.PointLight(0x00f0ff, 1.3, 8);
+        fillLight.position.set(-1.2, 1.6, 1.1);
+        scene.add(fillLight);
+
+        // Rim/Back light (vibrant magenta/purple edge highlight on hair and shoulders)
+        const rimLight = new THREE.SpotLight(0xc752ff, 2.2, 9, Math.PI / 4, 0.4);
+        rimLight.position.set(-2.0, 2.8, -2.2);
+        rimLight.target.position.set(0, 1.2, 0);
+        scene.add(rimLight);
+        scene.add(rimLight.target);
+
+        // Monitor glow point light
+        const monitorGlow = new THREE.PointLight(0x44d7ff, 1.8, 4.5);
+        monitorGlow.position.set(0, 1.45, 0.35);
+        scene.add(monitorGlow);
+
+        // Floor ground grid
+        const gridGeo = new THREE.PlaneGeometry(30, 30);
+        const gridMat = new THREE.MeshStandardMaterial({
+            color: 0x070c18,
+            roughness: 0.85,
+            metalness: 0.4
+        });
+        const floor = new THREE.Mesh(gridGeo, gridMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.02;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Subtle decorative floor neon ring
+        const ringGeo = new THREE.RingGeometry(2.4, 2.45, 64);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(0, 0.001, -0.1);
+        scene.add(ring);
+
+        // --- 3. Dynamic Texture Canvases for Workstation Monitors ---
+        // Left Monitor: Live Code Editor Canvas
+        const codeCanvas = document.createElement('canvas');
+        codeCanvas.width = 1024; codeCanvas.height = 512;
+        const codeCtx = codeCanvas.getContext('2d');
+        const codeTexture = new THREE.CanvasTexture(codeCanvas);
+
+        // Right Monitor: HUD Telemetry & Neural Visualizer Canvas
+        const hudCanvas = document.createElement('canvas');
+        hudCanvas.width = 1024; hudCanvas.height = 512;
+        const hudCtx = hudCanvas.getContext('2d');
+        const hudTexture = new THREE.CanvasTexture(hudCanvas);
+
+        let activeCodeLines = [
+            "// JARVIS AI ASSISTANT — TASK AGENT",
+            "class AutonomousTaskExecutor {",
+            "    suspend fun executeTask(action: AndroidAction): Result {",
+            "        val context = resolveDeviceContext()",
+            "        val telemetry = deviceTelemetrySnapshot()",
+            "        return aiModelRouter.dispatch(action, telemetry)",
+            "    }",
+            "}"
+        ];
+        let currentTaskTitle = "Ready for Command";
+        let currentTaskProgress = 0.0;
+        let hudWaveOffset = 0;
+
+        function updateCodeCanvas(snippet) {
+            if (snippet) {
+                activeCodeLines = snippet.split('\n').slice(0, 14);
+            }
+            codeCtx.fillStyle = '#060d19';
+            codeCtx.fillRect(0, 0, 1024, 512);
+
+            // Tab bar
+            codeCtx.fillStyle = '#0f1a2e';
+            codeCtx.fillRect(0, 0, 1024, 40);
+            codeCtx.fillStyle = '#00f0ff';
+            codeCtx.font = 'bold 16px "Courier New", monospace';
+            codeCtx.fillText("MainActivity.kt • HasseenaNeuralCore", 20, 26);
+
+            // Line numbers & code
+            codeCtx.font = '15px "Courier New", monospace';
+            for (let i = 0; i < activeCodeLines.length; i++) {
+                const y = 70 + i * 28;
+                codeCtx.fillStyle = '#3a5376';
+                codeCtx.fillText(String(i + 1).padStart(2, '0') + " | ", 20, y);
+                
+                const line = activeCodeLines[i];
+                if (line.includes('class') || line.includes('fun') || line.includes('val')) {
+                    codeCtx.fillStyle = '#c752ff';
+                } else if (line.includes('//')) {
+                    codeCtx.fillStyle = '#4e7399';
+                } else if (line.includes('"')) {
+                    codeCtx.fillStyle = '#67e88b';
+                } else {
+                    codeCtx.fillStyle = '#e2edfd';
+                }
+                codeCtx.fillText(line, 80, y);
+            }
+            codeTexture.needsUpdate = true;
+        }
+
+        function updateHudCanvas(activity, progress) {
+            hudCtx.fillStyle = '#07101f';
+            hudCtx.fillRect(0, 0, 1024, 512);
+
+            // Top Status Bar
+            hudCtx.fillStyle = '#11223d';
+            hudCtx.fillRect(0, 0, 1024, 48);
+            hudCtx.fillStyle = '#7de7ff';
+            hudCtx.font = 'bold 18px sans-serif';
+            hudCtx.fillText("JARVIS NEURAL CORE • STATUS: " + activity.toUpperCase(), 24, 32);
+
+            // Progress Bar
+            hudCtx.fillStyle = '#132845';
+            hudCtx.fillRect(24, 70, 976, 22);
+            hudCtx.fillStyle = activity === 'TASK_ERROR' ? '#ff5252' : '#00f0ff';
+            hudCtx.fillRect(24, 70, 976 * Math.max(0.05, progress), 22);
+
+            // Telemetry Cards
+            hudCtx.fillStyle = '#0c1a30';
+            hudCtx.strokeStyle = '#223c63';
+            hudCtx.lineWidth = 2;
+            
+            // Card 1: CPU / MEM
+            hudCtx.fillRect(24, 110, 465, 170);
+            hudCtx.strokeRect(24, 110, 465, 170);
+            hudCtx.fillStyle = '#8ab7e6';
+            hudCtx.font = '14px sans-serif';
+            hudCtx.fillText("COMPUTE PIPELINE", 40, 138);
+            hudCtx.fillStyle = '#00f0ff';
+            hudCtx.font = 'bold 28px sans-serif';
+            hudCtx.fillText("60 FPS • 12ms", 40, 185);
+            hudCtx.fillStyle = '#5582b0';
+            hudCtx.font = '13px sans-serif';
+            hudCtx.fillText("Hardware Acceleration: GLES 3.0 • WebGL2", 40, 225);
+
+            // Card 2: Neural Waveform
+            hudCtx.fillRect(525, 110, 475, 170);
+            hudCtx.strokeRect(525, 110, 475, 170);
+            hudCtx.fillStyle = '#8ab7e6';
+            hudCtx.font = '14px sans-serif';
+            hudCtx.fillText("AUDIO / SPEECH SPECTRUM", 545, 138);
+
+            // Animated wave bars
+            hudWaveOffset += 0.08;
+            for (let i = 0; i < 28; i++) {
+                const barH = 15 + Math.sin(hudWaveOffset + i * 0.45) * 35 * (currentAudioLevel * 2.5 + 0.3);
+                hudCtx.fillStyle = i % 2 === 0 ? '#00f0ff' : '#c752ff';
+                hudCtx.fillRect(545 + i * 15, 250 - barH, 9, barH);
+            }
+
+            // Bottom Task Banner
+            hudCtx.fillStyle = '#0f223e';
+            hudCtx.fillRect(24, 305, 976, 175);
+            hudCtx.strokeStyle = '#1d4273';
+            hudCtx.strokeRect(24, 305, 976, 175);
+            hudCtx.fillStyle = '#00f0ff';
+            hudCtx.font = 'bold 20px sans-serif';
+            hudCtx.fillText(currentTaskTitle, 48, 355);
+            hudCtx.fillStyle = '#a6c6ea';
+            hudCtx.font = '15px sans-serif';
+            hudCtx.fillText("Integrated with Room Database, Firestore Cloud Sync & Gemini Voice", 48, 395);
+            hudCtx.fillStyle = '#5582b0';
+            hudCtx.font = '13px sans-serif';
+            hudCtx.fillText("Zero Trust Security Rules • Client Scoped Authorization Active", 48, 435);
+
+            hudTexture.needsUpdate = true;
+        }
+
+        // --- 4. Workstation 3D Geometry ---
+        const deskGroup = new THREE.Group();
+        scene.add(deskGroup);
+
+        // Desk surface (Curved sleek carbon-matte executive desk)
+        const deskTopGeo = new THREE.BoxGeometry(2.4, 0.06, 1.1);
+        const deskMat = new THREE.MeshStandardMaterial({
+            color: 0x121722,
+            roughness: 0.35,
+            metalness: 0.85
+        });
+        const deskTop = new THREE.Mesh(deskTopGeo, deskMat);
+        deskTop.position.set(0, 0.82, -0.15);
+        deskTop.receiveShadow = true;
+        deskTop.castShadow = true;
+        deskGroup.add(deskTop);
+
+        // Desk legs / frame (Brushed dark aluminum)
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x0a0e17, roughness: 0.5, metalness: 0.9 });
+        const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.82, 0.9), legMat);
+        leftLeg.position.set(-1.08, 0.41, -0.15);
+        deskGroup.add(leftLeg);
+
+        const rightLeg = leftLeg.clone();
+        rightLeg.position.x = 1.08;
+        deskGroup.add(rightLeg);
+
+        // Dual Monitors: Left (Code) & Right (Neural HUD)
+        const monitorMat = new THREE.MeshStandardMaterial({
+            color: 0x080c14,
+            roughness: 0.2,
+            metalness: 0.9
+        });
+        const screenFrameGeo = new THREE.BoxGeometry(0.96, 0.54, 0.03);
+
+        // Left Screen (Code Editor)
+        const leftMonitor = new THREE.Group();
+        const leftFrame = new THREE.Mesh(screenFrameGeo, monitorMat);
+        leftFrame.castShadow = true;
+        const leftScreenMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.92, 0.5),
+            new THREE.MeshBasicMaterial({ map: codeTexture })
+        );
+        leftScreenMesh.position.z = 0.016;
+        leftMonitor.add(leftFrame);
+        leftMonitor.add(leftScreenMesh);
+        leftMonitor.position.set(-0.52, 1.28, -0.36);
+        leftMonitor.rotation.y = 0.24;
+        deskGroup.add(leftMonitor);
+
+        // Right Screen (HUD & Neural Status)
+        const rightMonitor = new THREE.Group();
+        const rightFrame = new THREE.Mesh(screenFrameGeo, monitorMat);
+        rightFrame.castShadow = true;
+        const rightScreenMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.92, 0.5),
+            new THREE.MeshBasicMaterial({ map: hudTexture })
+        );
+        rightScreenMesh.position.z = 0.016;
+        rightMonitor.add(rightFrame);
+        rightMonitor.add(rightScreenMesh);
+        rightMonitor.position.set(0.52, 1.28, -0.36);
+        rightMonitor.rotation.y = -0.24;
+        deskGroup.add(rightMonitor);
+
+        // Monitor stands
+        const standMat = new THREE.MeshStandardMaterial({ color: 0x1a2130, roughness: 0.4, metalness: 0.8 });
+        const leftStand = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.4, 16), standMat);
+        leftStand.position.set(-0.52, 1.02, -0.38);
+        deskGroup.add(leftStand);
+
+        const rightStand = leftStand.clone();
+        rightStand.position.x = 0.52;
+        deskGroup.add(rightStand);
+
+        // Mechanical Keyboard (with individual illuminated keycaps)
+        const keyboardGroup = new THREE.Group();
+        const kbBase = new THREE.Mesh(
+            new THREE.BoxGeometry(0.48, 0.018, 0.16),
+            new THREE.MeshStandardMaterial({ color: 0x151b27, roughness: 0.6, metalness: 0.7 })
+        );
+        kbBase.castShadow = true;
+        keyboardGroup.add(kbBase);
+
+        const keyMat = new THREE.MeshStandardMaterial({ color: 0x242e40, roughness: 0.4, metalness: 0.5 });
+        const keyAccentMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, roughness: 0.3, emissive: 0x00f0ff, emissiveIntensity: 0.35 });
+        const keyGeo = new THREE.BoxGeometry(0.024, 0.012, 0.024);
+
+        const keyMeshes = [];
+        for (let r = 0; r < 4; r++) {
+            for (let c = 0; c < 12; c++) {
+                const k = new THREE.Mesh(keyGeo, (c === 0 || c === 11 || (r === 3 && c > 3 && c < 8)) ? keyAccentMat : keyMat);
+                k.position.set(-0.2 + c * 0.035, 0.013, -0.05 + r * 0.035);
+                keyboardGroup.add(k);
+                keyMeshes.push(k);
+            }
+        }
+        keyboardGroup.position.set(-0.06, 0.855, 0.06);
+        deskGroup.add(keyboardGroup);
+
+        // Ergonomic Precision Mouse
+        const mouseGroup = new THREE.Group();
+        const mouseBody = new THREE.Mesh(
+            new THREE.BoxGeometry(0.065, 0.025, 0.11),
+            new THREE.MeshStandardMaterial({ color: 0x1a2130, roughness: 0.3, metalness: 0.8 })
+        );
+        mouseBody.castShadow = true;
+        const scrollWheel = new THREE.Mesh(
+            new THREE.BoxGeometry(0.012, 0.01, 0.03),
+            new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 0.6 })
+        );
+        scrollWheel.position.set(0, 0.014, -0.02);
+        mouseGroup.add(mouseBody);
+        mouseGroup.add(scrollWheel);
+        mouseGroup.position.set(0.32, 0.858, 0.08);
+        deskGroup.add(mouseGroup);
+
+        // Office Chair (Modern Executive Mesh Chair)
+        const chairGroup = new THREE.Group();
+        const chairSeat = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.28, 0.28, 0.08, 32),
+            new THREE.MeshStandardMaterial({ color: 0x161c28, roughness: 0.8, metalness: 0.2 })
+        );
+        chairSeat.position.y = 0.52;
+        chairGroup.add(chairSeat);
+
+        const chairBack = new THREE.Mesh(
+            new THREE.BoxGeometry(0.44, 0.64, 0.06),
+            new THREE.MeshStandardMaterial({ color: 0x121722, roughness: 0.7, metalness: 0.3 })
+        );
+        chairBack.position.set(0, 0.86, 0.24);
+        chairBack.rotation.x = -0.12;
+        chairGroup.add(chairBack);
+        chairGroup.position.set(0, 0, 0.38);
+        scene.add(chairGroup);
+
+        // --- 5. REALISTIC ADULT FEMALE 3D AVATAR (23-28 yrs, Professional Executive) ---
+        const avatarGroup = new THREE.Group();
+        scene.add(avatarGroup);
+        avatarGroup.position.set(0, 0, 0.38);
+
+        // Realistic PBR Skin Material with warm subsurface scattering aesthetic
+        const skinMaterial = new THREE.MeshStandardMaterial({
+            color: 0xedcaa6,
+            roughness: 0.52,
+            metalness: 0.04
+        });
+
+        // Torso / Stylish Professional Blazer & Silk Blouse
+        const blazerMat = new THREE.MeshStandardMaterial({
+            color: 0x182236, // Deep tailored slate navy
+            roughness: 0.75,
+            metalness: 0.15
+        });
+        const blouseMat = new THREE.MeshStandardMaterial({
+            color: 0xeef4fc, // Clean off-white silk inner blouse
+            roughness: 0.45,
+            metalness: 0.05
+        });
+
+        const torso = new THREE.Mesh(
+            new THREE.BoxGeometry(0.36, 0.48, 0.24),
+            blazerMat
+        );
+        torso.position.set(0, 0.78, 0.02);
+        torso.castShadow = true;
+        avatarGroup.add(torso);
+
+        const blouseInner = new THREE.Mesh(
+            new THREE.BoxGeometry(0.18, 0.28, 0.02),
+            blouseMat
+        );
+        blouseInner.position.set(0, 0.86, -0.11);
+        avatarGroup.add(blouseInner);
+
+        // Neck (Slender, natural feminine proportions)
+        const neck = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.062, 0.075, 0.15, 24),
+            skinMaterial
+        );
+        neck.position.set(0, 1.06, 0.01);
+        neck.castShadow = true;
+        avatarGroup.add(neck);
+
+        // Head Group (for realistic head tilt, nodding, tracking)
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 1.22, 0.01);
+        avatarGroup.add(headGroup);
+
+        // Realistic Cranium & Face Base
+        const headGeo = new THREE.SphereGeometry(0.128, 32, 28);
+        headGeo.scale(0.92, 1.08, 1.0);
+        const headMesh = new THREE.Mesh(headGeo, skinMaterial);
+        headMesh.castShadow = true;
+        headGroup.add(headMesh);
+
+        // Chin / Delicate Feminine Jaw
+        const jawGeo = new THREE.CylinderGeometry(0.045, 0.082, 0.08, 16);
+        const jawMesh = new THREE.Mesh(jawGeo, skinMaterial);
+        jawMesh.position.set(0, -0.085, -0.035);
+        jawMesh.rotation.x = -0.22;
+        headGroup.add(jawMesh);
+
+        // Realistic Eyes (Right & Left)
+        const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xfcfcfc, roughness: 0.1, metalness: 0.05 });
+        const irisMat = new THREE.MeshStandardMaterial({ color: 0x2e669e, roughness: 0.15, metalness: 0.2 }); // Deep hazel/blue iris
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+        const eyelidMat = new THREE.MeshStandardMaterial({ color: 0xe0b994, roughness: 0.55 });
+
+        function createRealisticEye(xPos) {
+            const eyeGroup = new THREE.Group();
+            
+            // Eyeball
+            const eyeball = new THREE.Mesh(new THREE.SphereGeometry(0.024, 24, 20), eyeWhiteMat);
+            eyeGroup.add(eyeball);
+
+            // Iris
+            const iris = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.005, 24), irisMat);
+            iris.rotation.x = Math.PI / 2;
+            iris.position.z = -0.022;
+            eyeGroup.add(iris);
+
+            // Pupil
+            const pupil = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.006, 16), pupilMat);
+            pupil.rotation.x = Math.PI / 2;
+            pupil.position.z = -0.023;
+            eyeGroup.add(pupil);
+
+            // Upper Eyelid (Blended for procedural natural blinking)
+            const upperLid = new THREE.Mesh(new THREE.SphereGeometry(0.026, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2), eyelidMat);
+            upperLid.position.set(0, 0, 0);
+            eyeGroup.add(upperLid);
+
+            eyeGroup.position.set(xPos, 0.016, -0.112);
+            return { group: eyeGroup, upperLid: upperLid, iris: iris };
+        }
+
+        const leftEyeObj = createRealisticEye(-0.046);
+        const rightEyeObj = createRealisticEye(0.046);
+        headGroup.add(leftEyeObj.group);
+        headGroup.add(rightEyeObj.group);
+
+        // Eyebrows (Realistic sculpted arches)
+        const browMat = new THREE.MeshStandardMaterial({ color: 0x362215, roughness: 0.85 }); // Dark brown
+        const browGeo = new THREE.BoxGeometry(0.038, 0.006, 0.012);
+
+        const leftBrow = new THREE.Mesh(browGeo, browMat);
+        leftBrow.position.set(-0.048, 0.052, -0.118);
+        leftBrow.rotation.z = -0.08;
+        headGroup.add(leftBrow);
+
+        const rightBrow = new THREE.Mesh(browGeo, browMat);
+        rightBrow.position.set(0.048, 0.052, -0.118);
+        rightBrow.rotation.z = 0.08;
+        headGroup.add(rightBrow);
+
+        // Nose (Delicate bridge and tip)
+        const noseMat = skinMaterial;
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.052, 16), noseMat);
+        nose.position.set(0, -0.008, -0.134);
+        nose.rotation.x = -Math.PI / 10;
+        headGroup.add(nose);
+
+        // Lips & Animated Mouth (Procedural Lip-Sync Blendshape)
+        const lipMat = new THREE.MeshStandardMaterial({ color: 0xb55a60, roughness: 0.38, metalness: 0.1 }); // Soft rose satin gloss
+        const mouthGroup = new THREE.Group();
+        mouthGroup.position.set(0, -0.055, -0.12);
+
+        const upperLip = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.026, 0.008, 16), lipMat);
+        upperLip.rotation.x = Math.PI / 2;
+        mouthGroup.add(upperLip);
+
+        const lowerLip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.024, 0.009, 16), lipMat);
+        lowerLip.rotation.x = Math.PI / 2;
+        lowerLip.position.y = -0.01;
+        mouthGroup.add(lowerLip);
+
+        // Inner mouth cavity (visible when speaking)
+        const mouthCavity = new THREE.Mesh(
+            new THREE.BoxGeometry(0.036, 0.012, 0.015),
+            new THREE.MeshBasicMaterial({ color: 0x1f0a0c })
+        );
+        mouthCavity.position.set(0, -0.005, 0.005);
+        mouthGroup.add(mouthCavity);
+        headGroup.add(mouthGroup);
+
+        // Realistic Layered Hair (Auburn/Brunette Bob with soft waves)
+        const hairMat = new THREE.MeshStandardMaterial({
+            color: 0x2b1c14, // Dark chocolate / rich auburn
+            roughness: 0.42,
+            metalness: 0.15
+        });
+
+        const hairCrown = new THREE.Mesh(
+            new THREE.SphereGeometry(0.136, 32, 24, 0, Math.PI * 2, 0, Math.PI * 0.72),
+            hairMat
+        );
+        hairCrown.position.set(0, 0.02, 0.01);
+        headGroup.add(hairCrown);
+
+        // Hair side strands (framing cheekbones and jaw)
+        const leftHair = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.065, 0.32, 16), hairMat);
+        leftHair.position.set(-0.115, -0.07, -0.01);
+        leftHair.rotation.z = -0.12;
+        headGroup.add(leftHair);
+
+        const rightHair = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.065, 0.32, 16), hairMat);
+        rightHair.position.set(0.115, -0.07, -0.01);
+        rightHair.rotation.z = 0.12;
+        headGroup.add(rightHair);
+
+        // Arms and Hands (Rigged for realistic typing and gesture kinematics)
+        const armMat = blazerMat;
+        const handMat = skinMaterial;
+
+        // Left Arm Group (Typing on keyboard)
+        const leftArm = new THREE.Group();
+        leftArm.position.set(-0.21, 0.95, 0.04);
+        
+        const leftUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.28, 16), armMat);
+        leftUpperArm.position.set(0, -0.14, 0);
+        leftArm.add(leftUpperArm);
+
+        const leftForearm = new THREE.Group();
+        leftForearm.position.set(0, -0.28, 0);
+        const leftForearmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.032, 0.26, 16), armMat);
+        leftForearmMesh.position.set(0, 0.02, -0.13);
+        leftForearmMesh.rotation.x = Math.PI / 2.3;
+        leftForearm.add(leftForearmMesh);
+
+        const leftHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.022, 0.085), handMat);
+        leftHand.position.set(0, 0.04, -0.28);
+        leftForearm.add(leftHand);
+        leftArm.add(leftForearm);
+        avatarGroup.add(leftArm);
+
+        // Right Arm Group (Typing or Mouse Control)
+        const rightArm = new THREE.Group();
+        rightArm.position.set(0.21, 0.95, 0.04);
+
+        const rightUpperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.28, 16), armMat);
+        rightUpperArm.position.set(0, -0.14, 0);
+        rightArm.add(rightUpperArm);
+
+        const rightForearm = new THREE.Group();
+        rightForearm.position.set(0, -0.28, 0);
+        const rightForearmMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.032, 0.26, 16), armMat);
+        rightForearmMesh.position.set(0, 0.02, -0.13);
+        rightForearmMesh.rotation.x = Math.PI / 2.3;
+        rightForearm.add(rightForearmMesh);
+
+        const rightHand = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.022, 0.085), handMat);
+        rightHand.position.set(0, 0.04, -0.28);
+        rightForearm.add(rightHand);
+        rightArm.add(rightForearm);
+        avatarGroup.add(rightArm);
+
+        // Initial Arm Posture resting on keyboard
+        leftArm.rotation.x = 0.24; leftArm.rotation.z = -0.18;
+        rightArm.rotation.x = 0.24; rightArm.rotation.z = 0.18;
+
+        // --- 5B. RIGGED 3D HUMAN FEMALE AVATAR (female_avatar.glb) ---
+        let gltfAvatar = null;
+        const gltfBones = {};
+        const gltfMorphMeshes = [];
+        let isGltfLoaded = false;
+
+        const proceduralMeshes = [
+            torso, blouseInner, neck, headGroup, leftArm, rightArm
+        ];
+
+        function onAvatarLoaded(gltf) {
+            gltfAvatar = gltf.scene;
+            // Position seated comfortably into the executive desk chair (hips aligned with seat cushion)
+            gltfAvatar.position.set(0, -0.46, -0.02);
+            gltfAvatar.scale.set(0.92, 0.92, 0.92);
+
+            gltfAvatar.traverse(function(child) {
+                if (child.isBone) {
+                    gltfBones[child.name] = child;
+                }
+                if (child.isMesh || child.isSkinnedMesh) {
+                    // Hide any beard/facial hair mesh node to preserve attractive female face
+                    const cName = (child.name || '').toLowerCase();
+                    if (cName.includes('beard') || cName.includes('mustache')) {
+                        child.visible = false;
+                        return;
+                    }
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+
+                    // PBR Material tuning for realistic skin, hair, and clothing
+                    if (child.material) {
+                        if (cName.includes('head') || cName.includes('skin') || cName.includes('body')) {
+                            child.material.roughness = 0.58;
+                            child.material.metalness = 0.02;
+                        } else if (cName.includes('eye')) {
+                            child.material.roughness = 0.12;
+                        }
+                    }
+
+                    if (child.morphTargetDictionary && child.morphTargetInfluences) {
+                        gltfMorphMeshes.push(child);
+                    }
+                }
+            });
+
+            // Seated posture: hips upright, thighs horizontal over chair, knees bent 90 deg down, feet on floor
+            if (gltfBones['Hips']) {
+                gltfBones['Hips'].rotation.x = -0.05;
+            }
+            if (gltfBones['LeftUpLeg']) {
+                gltfBones['LeftUpLeg'].rotation.set(-1.54, -0.08, -0.06);
+            }
+            if (gltfBones['RightUpLeg']) {
+                gltfBones['RightUpLeg'].rotation.set(-1.54, 0.08, 0.06);
+            }
+            if (gltfBones['LeftLeg']) {
+                gltfBones['LeftLeg'].rotation.set(1.54, 0, 0);
+            }
+            if (gltfBones['RightLeg']) {
+                gltfBones['RightLeg'].rotation.set(1.54, 0, 0);
+            }
+
+            avatarGroup.add(gltfAvatar);
+            isGltfLoaded = true;
+
+            // Hide procedural geometric fallback meshes now that genuine rigged 3D human avatar is active
+            proceduralMeshes.forEach(function(m) { m.visible = false; });
+            console.log("HASASENA Rigged 3D Female Avatar successfully mounted with 67 joints!");
+        }
+
+        // Dual Loading Pipeline: Direct asset load + Base64 bridge fallback
+        if (typeof THREE.GLTFLoader !== 'undefined') {
+            const gltfLoader = new THREE.GLTFLoader();
+
+            function loadViaBridge() {
+                if (window.AndroidBridge && window.AndroidBridge.getAvatarBase64) {
+                    try {
+                        const b64 = window.AndroidBridge.getAvatarBase64();
+                        if (b64 && b64.length > 100) {
+                            const binary = atob(b64);
+                            const bytes = new Uint8Array(binary.length);
+                            for (let i = 0; i < binary.length; i++) {
+                                bytes[i] = binary.charCodeAt(i);
+                            }
+                            gltfLoader.parse(bytes.buffer, '', onAvatarLoaded, function(pErr) {
+                                console.warn('GLTF parse error from base64:', pErr);
+                            });
+                            return;
+                        }
+                    } catch (bErr) {
+                        console.warn('Bridge base64 load failed:', bErr);
+                    }
+                }
+            }
+
+            gltfLoader.load('female_avatar.glb', onAvatarLoaded, undefined, function(err) {
+                console.warn('Direct file load error, triggering native bridge fallback:', err);
+                loadViaBridge();
+            });
+        }
+
+        // --- 6. Camera Position & Angle Presets ---
+        const cameraPresets = {
+            WORKSTATION: { pos: new THREE.Vector3(0, 1.45, 1.65), target: new THREE.Vector3(0, 1.15, -0.1) },
+            CLOSEUP_PORTRAIT: { pos: new THREE.Vector3(0, 1.34, 0.68), target: new THREE.Vector3(0, 1.25, 0.01) },
+            DESK_ANGLE: { pos: new THREE.Vector3(0.95, 1.38, 1.25), target: new THREE.Vector3(-0.1, 1.12, -0.2) },
+            CINEMATIC_ORBIT: { pos: new THREE.Vector3(-0.95, 1.42, 1.35), target: new THREE.Vector3(0.1, 1.15, -0.1) }
+        };
+
+        let currentCameraPreset = 'WORKSTATION';
+        let targetCameraPos = cameraPresets.WORKSTATION.pos.clone();
+        let targetCameraLook = cameraPresets.WORKSTATION.target.clone();
+        camera.position.copy(targetCameraPos);
+
+        // --- 7. Animation State Machine & Procedural Dynamics ---
+        let currentActivity = 'IDLE';
+        let isAnimationPaused = false;
+        let currentAudioLevel = 0.0;
+
+        // Phoneme-Level Lip-Sync State
+        let currentPhoneme = 'sil';
+        let currentVisemeId = 0;
+        let targetVisemeMouthOpen = 0.0;
+        let targetVisemeMouthSmile = 0.0;
+        let currentMouthOpen = 0.0;
+        let currentMouthSmile = 0.0;
+
+        // Blinking system: natural randomized human frequency
+        let nextBlinkTime = 2.5;
+        let isBlinking = false;
+        let blinkPhase = 0.0;
+
+        // Eye micro-saccades
+        let nextSaccadeTime = 1.8;
+        let targetGazeX = 0.0;
+        let targetGazeY = 0.0;
+        let currentGazeX = 0.0;
+        let currentGazeY = 0.0;
+
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (isAnimationPaused) return;
+
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 1. Smooth Camera Interpolation
+            camera.position.lerp(targetCameraPos, 0.06);
+            const currentLook = new THREE.Vector3();
+            camera.getWorldDirection(currentLook);
+            const desiredLook = targetCameraLook.clone().sub(camera.position).normalize();
+            currentLook.lerp(desiredLook, 0.06);
+            camera.lookAt(camera.position.clone().add(currentLook));
+
+            // 2. Procedural Breathing & Subtle Posture Shift
+            const breath = Math.sin(time * 1.5) * 0.006;
+            torso.position.y = 0.78 + breath;
+            neck.position.y = 1.06 + breath;
+            headGroup.position.y = 1.22 + breath * 1.2;
+
+            // 3. Realistic Natural Blinking (Smooth lid drop and reopen)
+            if (!isBlinking && time >= nextBlinkTime) {
+                isBlinking = true;
+                blinkPhase = 0.0;
+                nextBlinkTime = time + 2.4 + Math.random() * 2.8;
+            }
+            let eyeScaleY = 1.0;
+            if (isBlinking) {
+                blinkPhase += delta * 14.0; // Realistic human blink speed (~150ms)
+                let lidDrop = Math.sin(blinkPhase);
+                if (blinkPhase >= Math.PI) {
+                    lidDrop = 0;
+                    isBlinking = false;
+                }
+                eyeScaleY = Math.max(0.08, 1.0 - lidDrop * 0.95);
+                leftEyeObj.upperLid.scale.y = eyeScaleY;
+                rightEyeObj.upperLid.scale.y = eyeScaleY;
+            }
+
+            // Blink eye bones on rigged GLTF model
+            if (isGltfLoaded && gltfAvatar) {
+                const bLeftEye = gltfBones['LeftEye'];
+                const bRightEye = gltfBones['RightEye'];
+                if (bLeftEye) bLeftEye.scale.y = eyeScaleY;
+                if (bRightEye) bRightEye.scale.y = eyeScaleY;
+            }
+
+            // 4. Natural Eye Micro-Saccades (Gaze shifts between monitors & user)
+            if (time >= nextSaccadeTime) {
+                if (currentActivity === 'CODING') {
+                    // Scanning code across left and right screens
+                    targetGazeX = -0.008 + (Math.random() - 0.5) * 0.016;
+                    targetGazeY = (Math.random() - 0.5) * 0.008;
+                } else if (currentActivity === 'SPEAKING' || currentActivity === 'LISTENING') {
+                    // Looking directly toward camera/user
+                    targetGazeX = (Math.random() - 0.5) * 0.004;
+                    targetGazeY = (Math.random() - 0.5) * 0.004;
+                } else {
+                    targetGazeX = (Math.random() - 0.5) * 0.012;
+                    targetGazeY = (Math.random() - 0.5) * 0.008;
+                }
+                nextSaccadeTime = time + 1.2 + Math.random() * 2.0;
+            }
+            currentGazeX += (targetGazeX - currentGazeX) * 0.12;
+            currentGazeY += (targetGazeY - currentGazeY) * 0.12;
+            leftEyeObj.iris.position.x = currentGazeX; leftEyeObj.iris.position.y = currentGazeY;
+            rightEyeObj.iris.position.x = currentGazeX; rightEyeObj.iris.position.y = currentGazeY;
+
+            // 5. Phoneme-Level Lip-Sync & Acoustic Modulation
+            if (currentActivity === 'SPEAKING') {
+                // Modulate phoneme mouth target by speech acoustic amplitude
+                const loudnessMultiplier = 0.50 + currentAudioLevel * 0.70;
+                const dynamicTargetOpen = Math.min(1.0, targetVisemeMouthOpen * loudnessMultiplier);
+                currentMouthOpen += (dynamicTargetOpen - currentMouthOpen) * 0.42;
+                currentMouthSmile += (targetVisemeMouthSmile - currentMouthSmile) * 0.38;
+            } else {
+                currentMouthOpen += (0.0 - currentMouthOpen) * 0.30;
+                currentMouthSmile += (0.12 - currentMouthSmile) * 0.25; // Gentle pleasant resting smile
+            }
+
+            // Apply to procedural fallback mouth
+            lowerLip.position.y = -0.01 - currentMouthOpen * 0.018;
+            mouthCavity.scale.y = 1.0 + currentMouthOpen * 2.2;
+
+            // 6. Expressive Eyebrow Modulation
+            if (currentActivity === 'LISTENING') {
+                // Attentive raised eyebrows
+                leftBrow.position.y = 0.057; rightBrow.position.y = 0.057;
+                headGroup.rotation.z = -0.05; // Inquisitive head tilt
+                headGroup.rotation.x = -0.03;
+            } else if (currentActivity === 'THINKING') {
+                // Focused knit brows, looking upward
+                leftBrow.position.y = 0.048; rightBrow.position.y = 0.048;
+                headGroup.rotation.x = 0.07;
+                headGroup.rotation.y = 0.06;
+            } else if (currentActivity === 'CODING') {
+                // Concentrated neutral gaze at display
+                leftBrow.position.y = 0.051; rightBrow.position.y = 0.051;
+                headGroup.rotation.x = -0.08;
+                headGroup.rotation.y = -0.08;
+            } else {
+                // Natural relaxed idle
+                leftBrow.position.y = 0.052; rightBrow.position.y = 0.052;
+                headGroup.rotation.x = Math.sin(time * 0.7) * 0.025;
+                headGroup.rotation.y = Math.sin(time * 0.45) * 0.035;
+                headGroup.rotation.z = 0;
+            }
+
+            // 7. Hand & Kinematic Typing Actions (Procedural fallback)
+            if (currentActivity === 'CODING') {
+                const leftTap = Math.sin(time * 16.0);
+                const rightTap = Math.cos(time * 18.0);
+                leftHand.position.y = 0.04 + Math.max(0, leftTap) * 0.014;
+                rightHand.position.y = 0.04 + Math.max(0, rightTap) * 0.014;
+                leftHand.position.x = Math.sin(time * 2.5) * 0.04;
+                rightHand.position.x = Math.cos(time * 2.2) * 0.04;
+            } else if (currentActivity === 'RESEARCHING' || currentActivity === 'DOCUMENT_REVIEW') {
+                rightHand.position.x = 0.08 + Math.sin(time * 3.0) * 0.015;
+                rightHand.position.z = -0.28 + Math.cos(time * 2.5) * 0.015;
+                leftHand.position.set(0, 0.04, -0.28);
+            } else if (currentActivity === 'SPEAKING') {
+                leftHand.position.y = 0.04 + Math.sin(time * 3.5) * 0.02;
+                rightHand.position.y = 0.04 + Math.cos(time * 3.2) * 0.015;
+            } else {
+                leftHand.position.set(0, 0.04, -0.28);
+                rightHand.position.set(0, 0.04, -0.28);
+            }
+
+            // 7B. RIGGED 3D HUMAN FEMALE AVATAR (female_avatar.glb) KINEMATICS & PHONEME LIP-SYNC
+            if (isGltfLoaded && gltfAvatar) {
+                // Phoneme-Level Morph Targets on Head & Teeth Meshes
+                gltfMorphMeshes.forEach(mesh => {
+                    const dict = mesh.morphTargetDictionary;
+                    if (!dict) return;
+                    if (dict['mouthOpen'] !== undefined) {
+                        mesh.morphTargetInfluences[dict['mouthOpen']] = currentMouthOpen;
+                    }
+                    if (dict['mouthSmile'] !== undefined) {
+                        mesh.morphTargetInfluences[dict['mouthSmile']] = currentMouthSmile;
+                    }
+                });
+
+                // Spine & Chest Respiration
+                const spineBreath = Math.sin(time * 1.5) * 0.012;
+                if (gltfBones['Spine']) gltfBones['Spine'].rotation.x = 0.05 + spineBreath * 0.5;
+                if (gltfBones['Spine1']) gltfBones['Spine1'].rotation.x = spineBreath * 0.4;
+                if (gltfBones['Spine2']) gltfBones['Spine2'].rotation.x = spineBreath * 0.3;
+
+                // Head, Neck & Jaw Conversational Gestures
+                const headBone = gltfBones['Head'];
+                const neckBone = gltfBones['Neck'];
+                if (headBone) {
+                    if (currentActivity === 'LISTENING') {
+                        // Attentive inquisitive head tilt towards user
+                        headBone.rotation.set(-0.04, 0.06, -0.09);
+                    } else if (currentActivity === 'THINKING') {
+                        // Contemplative upward and rightward gaze
+                        headBone.rotation.set(0.14, 0.16, 0.04);
+                    } else if (currentActivity === 'CODING') {
+                        // Reading code display attentively
+                        headBone.rotation.set(-0.16 + Math.sin(time * 1.8) * 0.025, -0.12 + Math.cos(time * 1.4) * 0.035, 0);
+                    } else if (currentActivity === 'SPEAKING') {
+                        // Conversational head nods and phoneme syllable inflection
+                        const speechNod = Math.sin(time * 4.5) * 0.03 + currentMouthOpen * 0.04;
+                        const speechTilt = Math.cos(time * 2.8) * 0.035;
+                        headBone.rotation.set(-0.02 + speechNod, speechTilt, Math.sin(time * 2.0) * 0.02);
+                    } else if (currentActivity === 'TASK_COMPLETE') {
+                        // Pleased, affirmative nod
+                        headBone.rotation.set(-0.08 + Math.sin(time * 3.0) * 0.05, 0, 0);
+                    } else if (currentActivity === 'TASK_ERROR') {
+                        // Disappointed subtle head shake
+                        headBone.rotation.set(0.04, Math.sin(time * 4.0) * 0.07, 0);
+                    } else {
+                        // Natural relaxed idle micro-motion
+                        headBone.rotation.set(Math.sin(time * 0.8) * 0.022, Math.sin(time * 0.5) * 0.028, 0);
+                    }
+                }
+                if (neckBone) {
+                    neckBone.rotation.x = (currentActivity === 'CODING') ? -0.05 : 0.0;
+                }
+
+                // Arm, Forearm, Hand & Multi-Finger Typing Kinematics
+                const lArm = gltfBones['LeftArm'];
+                const lForeArm = gltfBones['LeftForeArm'];
+                const lHand = gltfBones['LeftHand'];
+                const rArm = gltfBones['RightArm'];
+                const rForeArm = gltfBones['RightForeArm'];
+                const rHand = gltfBones['RightHand'];
+
+                if (currentActivity === 'CODING') {
+                    // Both arms positioned naturally over the mechanical keyboard
+                    if (lArm) lArm.rotation.set(0.74, -0.24, 0.16);
+                    if (rArm) rArm.rotation.set(0.74, 0.24, -0.16);
+                    if (lForeArm) lForeArm.rotation.set(0.86 + Math.sin(time * 16.0) * 0.05, -0.28, 0);
+                    if (rForeArm) rForeArm.rotation.set(0.86 + Math.cos(time * 18.0) * 0.05, 0.28, 0);
+                    if (lHand) lHand.rotation.set(0.14 + Math.sin(time * 14.0) * 0.06, 0, Math.cos(time * 12.0) * 0.05);
+                    if (rHand) rHand.rotation.set(0.14 + Math.cos(time * 15.0) * 0.06, 0, -Math.sin(time * 13.0) * 0.05);
+
+                    // Expressive multi-finger typing across keycaps
+                    ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'].forEach((finger, fIdx) => {
+                        const bLeft = gltfBones['LeftHand' + finger + '1'];
+                        const bRight = gltfBones['RightHand' + finger + '1'];
+                        if (bLeft) bLeft.rotation.x = 0.25 + Math.sin(time * 18.0 + fIdx) * 0.22;
+                        if (bRight) bRight.rotation.x = 0.25 + Math.cos(time * 19.0 + fIdx) * 0.22;
+                    });
+                } else if (currentActivity === 'RESEARCHING' || currentActivity === 'DOCUMENT_REVIEW') {
+                    // Left arm rests gracefully; right arm moves the ergonomic mouse
+                    if (lArm) lArm.rotation.set(0.68, -0.18, 0.12);
+                    if (lForeArm) lForeArm.rotation.set(0.82, -0.22, 0);
+                    if (lHand) lHand.rotation.set(0.1, 0, 0);
+                    if (rArm) rArm.rotation.set(0.70, 0.32, -0.14);
+                    if (rForeArm) rForeArm.rotation.set(0.78, 0.38, 0);
+                    if (rHand) rHand.rotation.set(0.1 + Math.sin(time * 3.0) * 0.04, Math.cos(time * 2.5) * 0.06, 0);
+                    // Mouse clicking index finger
+                    const rIndex = gltfBones['RightHandIndex1'];
+                    if (rIndex) rIndex.rotation.x = 0.35 + Math.sin(time * 6.0) * 0.15;
+                } else if (currentActivity === 'SPEAKING') {
+                    // Natural conversational gestures: right arm rises in open-palm explanatory cadence
+                    const gestureRise = Math.sin(time * 2.6) * 0.12;
+                    if (lArm) lArm.rotation.set(0.68, -0.18, 0.14);
+                    if (lForeArm) lForeArm.rotation.set(0.82, -0.18, 0);
+                    if (lHand) lHand.rotation.set(0.12, 0, 0);
+
+                    if (rArm) rArm.rotation.set(0.60 - gestureRise, 0.26 + gestureRise * 0.5, -0.15);
+                    if (rForeArm) rForeArm.rotation.set(0.92 + gestureRise * 0.4, 0.20, 0.1);
+                    if (rHand) rHand.rotation.set(0.18 + gestureRise * 0.6, Math.sin(time * 2.2) * 0.1, 0);
+
+                    // Relaxed feminine finger curl during speech gesture
+                    ['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'].forEach((finger, fIdx) => {
+                        const bRight = gltfBones['RightHand' + finger + '1'];
+                        if (bRight) bRight.rotation.x = 0.28 + Math.sin(time * 2.6 + fIdx * 0.4) * 0.15;
+                    });
+                } else if (currentActivity === 'LISTENING') {
+                    // Attentive forward posture, both hands resting neatly on desk
+                    if (lArm) lArm.rotation.set(0.70, -0.16, 0.12);
+                    if (rArm) rArm.rotation.set(0.70, 0.16, -0.12);
+                    if (lForeArm) lForeArm.rotation.set(0.84, -0.18, 0);
+                    if (rForeArm) rForeArm.rotation.set(0.84, 0.18, 0);
+                    if (lHand) lHand.rotation.set(0.08, 0, 0);
+                    if (rHand) rHand.rotation.set(0.08, 0, 0);
+                } else if (currentActivity === 'THINKING') {
+                    // Thoughtful posture: right hand raised towards chin
+                    if (lArm) lArm.rotation.set(0.68, -0.18, 0.14);
+                    if (lForeArm) lForeArm.rotation.set(0.82, -0.22, 0);
+                    if (rArm) rArm.rotation.set(0.48, 0.38, -0.22);
+                    if (rForeArm) rForeArm.rotation.set(1.22, 0.45, 0.2);
+                    if (rHand) rHand.rotation.set(0.35, 0.15, 0);
+                } else {
+                    // Natural relaxed idle posture
+                    if (lArm) lArm.rotation.set(0.68, -0.18, 0.15);
+                    if (rArm) rArm.rotation.set(0.68, 0.18, -0.15);
+                    if (lForeArm) lForeArm.rotation.set(0.82, -0.22, 0);
+                    if (rForeArm) rForeArm.rotation.set(0.82, 0.22, 0);
+                    if (lHand) lHand.rotation.set(0.1, 0, 0);
+                    if (rHand) rHand.rotation.set(0.1, 0, 0);
+                }
+            }
+
+            // Render HUD Updates
+            updateHudCanvas(currentActivity, currentTaskProgress);
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize First Canvas Render & Start Loop
+        updateCodeCanvas();
+        updateHudCanvas('IDLE', 0.0);
+        animate();
+
+        // --- 8. Window Resizing Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 9. Bidirectional JavaScript Bridge for Android Kotlin ---
+        window.HasseenaBridge = {
+            setActivity: function(activity, taskTitle, codeSnippet, progress) {
+                currentActivity = activity || 'IDLE';
+                currentTaskTitle = taskTitle || 'Ready for Command';
+                currentTaskProgress = typeof progress === 'number' ? progress : 0.0;
+                
+                statusEl.textContent = 'STATE: ' + currentActivity.toUpperCase();
+                taskNameEl.textContent = currentTaskTitle;
+                taskMetaEl.textContent = (currentTaskProgress * 100).toFixed(0) + '% COMPLETE';
+
+                if (codeSnippet) {
+                    updateCodeCanvas(codeSnippet);
+                }
+
+                // Auto-adjust camera focus for high-immersion activities
+                if (currentActivity === 'SPEAKING' || currentActivity === 'LISTENING') {
+                    if (currentCameraPreset === 'WORKSTATION') {
+                        targetCameraPos.set(0, 1.38, 1.15);
+                    }
+                } else if (currentActivity === 'CODING') {
+                    targetCameraPos.copy(cameraPresets[currentCameraPreset].pos);
+                }
+            },
+
+            setSpeechAudioLevel: function(level) {
+                currentAudioLevel = Math.max(0.0, Math.min(1.0, level || 0.0));
+            },
+
+            // High-precision Phoneme-Level Lip-Sync Entry Point
+            setViseme: function(visemeId, mouthOpen, mouthSmile, audioLevel, phoneme) {
+                currentVisemeId = visemeId || 0;
+                targetVisemeMouthOpen = typeof mouthOpen === 'number' ? mouthOpen : 0.0;
+                targetVisemeMouthSmile = typeof mouthSmile === 'number' ? mouthSmile : 0.0;
+                if (typeof audioLevel === 'number') {
+                    currentAudioLevel = Math.max(0.0, Math.min(1.0, audioLevel));
+                }
+                currentPhoneme = phoneme || 'sil';
+            },
+
+            setCameraAngle: function(angleName) {
+                if (cameraPresets[angleName]) {
+                    currentCameraPreset = angleName;
+                    targetCameraPos.copy(cameraPresets[angleName].pos);
+                    targetCameraLook.copy(cameraPresets[angleName].target);
+                }
+            },
+
+            setCustomization: function(hairHex, blazerHex, neonHex) {
+                if (hairHex) hairMat.color.set(hairHex);
+                if (blazerHex) blazerMat.color.set(blazerHex);
+                if (neonHex) {
+                    fillLight.color.set(neonHex);
+                    ringMat.color.set(neonHex);
+                }
+                if (isGltfLoaded && gltfAvatar) {
+                    gltfAvatar.traverse(function(child) {
+                        if (child.isMesh && child.material && child.material.color) {
+                            const name = (child.name || '').toLowerCase();
+                            if (name.includes('hair') && hairHex) {
+                                child.material.color.set(hairHex);
+                            } else if ((name.includes('top') || name.includes('outfit') || name.includes('body')) && blazerHex) {
+                                child.material.color.set(blazerHex);
+                            }
+                        }
+                    });
+                }
+            },
+
+            setAnimationPaused: function(paused) {
+                isAnimationPaused = !!paused;
+            }
+        };
+
+        // Notify Android that WebGL 3D Avatar is initialized and ready
+        if (window.AndroidBridge && window.AndroidBridge.onAvatarReady) {
+            window.AndroidBridge.onAvatarReady();
+        }
+    })();
+    </script>
+</body>
+</html>

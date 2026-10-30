@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+<title id="title">JARVIS 22 3D-style command center concept</title><desc id="desc">A perspective-style futuristic desktop assistant interface with a central glowing AI orb, chat panel, system panels, and a holographic grid. Concept illustration, not a live application screenshot.</desc>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#030812"/><stop offset=".55" stop-color="#0a1b31"/><stop offset="1" stop-color="#11112c"/></linearGradient>
+ <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#132b49" stop-opacity=".95"/><stop offset="1" stop-color="#081425" stop-opacity=".96"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a3f4ff"/><stop offset=".45" stop-color="#35d8ff"/><stop offset="1" stop-color="#3c79ff"/></linearGradient>
+ <radialGradient id="orb"><stop stop-color="#d7ffff"/><stop offset=".15" stop-color="#57e8ff"/><stop offset=".45" stop-color="#147bc5" stop-opacity=".75"/><stop offset="1" stop-color="#113cff" stop-opacity="0"/></radialGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="9"/></filter>
+ <pattern id="grid" width="38" height="30" patternUnits="userSpaceOnUse"><path d="M38 0H0V30" fill="none" stroke="#2d83c7" stroke-opacity=".3" stroke-width="1"/></pattern>
+</defs>
+<rect width="1200" height="760" rx="26" fill="url(#bg)"/>
+<ellipse cx="610" cy="645" rx="500" ry="90" fill="#1b8aff" opacity=".13" filter="url(#glow)"/>
+<path d="M0 565L1200 410V760H0Z" fill="url(#grid)" opacity=".75"/>
+<text x="58" y="66" fill="#7eeeff" font-family="Segoe UI,Arial" font-size="16" font-weight="700" letter-spacing="5">HASASENA LABS / DESKTOP AI</text>
+<text x="58" y="112" fill="#f0fbff" font-family="Segoe UI,Arial" font-size="38" font-weight="800" letter-spacing="2">JARVIS 22</text>
+<text x="60" y="143" fill="#9cbad7" font-family="Segoe UI,Arial" font-size="16">3D COMMAND CENTER — CONCEPT PREVIEW</text>
+<g transform="translate(600 360)">
+ <ellipse cx="0" cy="190" rx="245" ry="55" fill="#2bcfff" opacity=".13" filter="url(#glow)"/>
+ <ellipse cx="0" cy="190" rx="185" ry="38" fill="none" stroke="#37dfff" stroke-opacity=".85" stroke-width="2"/>
+ <ellipse cx="0" cy="190" rx="140" ry="25" fill="none" stroke="#3a89ff" stroke-opacity=".8" stroke-width="2"/>
+ <circle cx="0" cy="0" r="165" fill="url(#orb)" opacity=".45"/>
+ <circle cx="0" cy="0" r="105" fill="none" stroke="#37dfff" stroke-width="2" stroke-dasharray="6 8"/>
+ <circle cx="0" cy="0" r="84" fill="none" stroke="#8af5ff" stroke-opacity=".8" stroke-width="1.5"/>
+ <ellipse cx="0" cy="0" rx="110" ry="43" fill="none" stroke="#5bbfff" stroke-width="2" transform="rotate(-28)"/>
+ <ellipse cx="0" cy="0" rx="110" ry="43" fill="none" stroke="#5bbfff" stroke-width="2" transform="rotate(55)"/>
+ <circle cx="0" cy="0" r="58" fill="url(#orb)"/>
+ <circle cx="0" cy="0" r="25" fill="#e4ffff" opacity=".95"/>
+ <circle cx="0" cy="0" r="48" fill="none" stroke="#80f2ff" stroke-opacity=".7" stroke-width="2"/>
+ <path d="M-135 0H-105M105 0H135M0-135V-105M0 105V135" stroke="#8bf6ff" stroke-width="3"/>
+</g>
+<g stroke="#3ccfff" stroke-opacity=".8" fill="url(#panel)" stroke-width="1.4">
+ <path d="M60 210L310 178L310 330L60 362Z"/>
+ <path d="M895 185L1140 216L1140 368L895 337Z"/>
+ <path d="M90 445L345 414L345 555L90 588Z"/>
+ <path d="M860 424L1115 393L1115 536L860 567Z"/>
+</g>
+<g font-family="Segoe UI,Arial">
+ <text x="82" y="235" fill="#9cf5ff" font-size="14" font-weight="700" letter-spacing="2">AI SESSION</text>
+ <text x="82" y="270" fill="#effaff" font-size="18" font-weight="700">Conversation</text>
+ <rect x="82" y="286" width="185" height="8" rx="4" fill="#183e5c"/><rect x="82" y="286" width="128" height="8" rx="4" fill="#38d9ff"/>
+ <text x="82" y="318" fill="#9cbad7" font-size="12">API-connected chat concept</text>
+ <text x="919" y="230" fill="#9cf5ff" font-size="14" font-weight="700" letter-spacing="2">VOICE LAYER</text>
+ <text x="919" y="265" fill="#effaff" font-size="18" font-weight="700">Voice pipeline</text>
+ <circle cx="928" cy="296" r="5" fill="#42dfff"/><text x="944" y="301" fill="#b6d2e8" font-size="12">Concept / future work</text>
+ <text x="112" y="472" fill="#9cf5ff" font-size="14" font-weight="700" letter-spacing="2">SYSTEM ACTIONS</text>
+ <text x="112" y="505" fill="#effaff" font-size="18" font-weight="700">Desktop controls</text>
+ <text x="112" y="530" fill="#9cbad7" font-size="12">Permission-controlled roadmap</text>
+ <text x="882" y="450" fill="#9cf5ff" font-size="14" font-weight="700" letter-spacing="2">KNOWLEDGE</text>
+ <text x="882" y="483" fill="#effaff" font-size="18" font-weight="700">Files &amp; memory</text>
+ <text x="882" y="508" fill="#9cbad7" font-size="12">RAG is not in the current starter</text>
+</g>
+<g fill="none" stroke="#57dfff" stroke-width="1.5" stroke-opacity=".7"><path d="M310 270L420 300L470 326"/><path d="M895 270L790 300L730 326"/><path d="M345 490L435 440L470 408"/><path d="M860 475L770 438L732 407"/></g>
+<rect x="60" y="675" width="1080" height="42" rx="10" fill="#071321" stroke="#274a6a"/>
+<text x="82" y="701" fill="#b9d8ef" font-family="Segoe UI,Arial" font-size="14">ILLUSTRATIVE CONCEPT ONLY · NOT A LIVE SCREENSHOT · ONLY DOCUMENTED FEATURES ARE CLAIMED AS IMPLEMENTED</text>
+</svg>
