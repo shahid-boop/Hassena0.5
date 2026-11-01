@@ -22,7 +22,7 @@ import org.robolectric.annotation.ConscryptMode
 import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [36])
 @ConscryptMode(ConscryptMode.Mode.OFF)
 @GraphicsMode(GraphicsMode.Mode.LEGACY)
 class ExampleRobolectricTest {
@@ -248,4 +248,342 @@ class ExampleRobolectricTest {
         val afterDelete = memory.getAgentTask("test_task_001")
         assertTrue(afterDelete == null)
     }
+
+    @Test
+    fun `self-healing credential scrubber redacts sensitive API keys and tokens`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val manager = com.example.services.healing.SelfHealingManager(context, memory)
+
+        val rawText = "Failed calling endpoint with key sk-abcdef1234567890abcdef1234567890 and Google AIzaSyD1234567890abcdefghijklmnopqrstuvw"
+        val scrubbed = manager.scrubSensitiveData(rawText)
+
+        assertFalse(scrubbed.contains("sk-abcdef1234567890abcdef1234567890"))
+        assertFalse(scrubbed.contains("AIzaSyD1234567890abcdefghijklmnopqrstuvw"))
+        assertTrue(scrubbed.contains("[REDACTED_SECRET]"))
+    }
+
+    @Test
+    fun `self-healing executeWithRetry bounded retries and recovery`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val manager = com.example.services.healing.SelfHealingManager(context, memory)
+
+        var attempts = 0
+        val result = manager.executeWithRetry<String>(
+            maxRetries = 3,
+            initialDelayMs = 10L,
+            backoffFactor = 1.5,
+            component = "TestService",
+            operation = "FetchData"
+        ) { attempt ->
+            attempts = attempt
+            if (attempt < 2) {
+                throw java.net.SocketTimeoutException("Simulated temporary timeout")
+            }
+            "Success on attempt $attempt"
+        }
+
+        assertTrue(result.isSuccess)
+        assertEquals(2, attempts)
+        assertEquals("Success on attempt 2", result.getOrNull())
+    }
+
+    @Test
+    fun `self-healing error recording and SQLite persistence`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val manager = com.example.services.healing.SelfHealingManager(context, memory)
+
+        val record = manager.recordError(
+            category = com.example.models.ErrorCategory.COMPILATION_ERROR,
+            message = "Unresolved symbol 'foo' with key sk-123456789012345678901234",
+            affectedComponent = "CompilerService",
+            operation = "BuildArtifact",
+            severity = com.example.models.ErrorSeverity.HIGH
+        )
+
+        val retrieved = memory.getErrorRecord(record.id)
+        assertTrue(retrieved != null)
+        assertEquals(record.id, retrieved?.id)
+        assertEquals(com.example.models.ErrorCategory.COMPILATION_ERROR, retrieved?.category)
+        assertFalse(retrieved?.message?.contains("sk-123456789012345678901234") == true)
+        assertTrue(retrieved?.message?.contains("[REDACTED_SECRET]") == true)
+
+        // Clear resolved errors test
+        manager.clearResolvedErrors()
+        // Unresolved remains
+        val stillExists = memory.getErrorRecord(record.id)
+        assertTrue(stillExists != null)
+    }
+
+    @Test
+    fun `self-healing patch approval verification and automatic rollback`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val manager = com.example.services.healing.SelfHealingManager(context, memory)
+
+        val error = manager.recordError(
+            category = com.example.models.ErrorCategory.COMPILATION_ERROR,
+            message = "Syntax error in TargetClass.kt",
+            affectedComponent = "CodingStudio",
+            operation = "Compile"
+        )
+
+        val initialCode = "val apiKey = \"\"\nfun run() = true"
+        val proposedRepair = manager.proposeCodeRepair(
+            errorRecord = error,
+            targetFile = "TargetClass.kt",
+            sourceCode = initialCode
+        )
+
+        assertEquals(com.example.models.RepairState.WAITING_FOR_APPROVAL, proposedRepair.state)
+        assertEquals("PENDING", proposedRepair.userApprovalStatus)
+        assertTrue(proposedRepair.proposedPatch != null)
+
+        // Scenario 1: Verification FAILS -> Auto-Rollback to snapshot
+        val failedRepair = manager.approveAndApplyPatch(
+            repairId = proposedRepair.id,
+            fileWriter = { _, _ -> true },
+            verifier = { _ -> Pair(false, "Compilation error: syntax invalid") }
+        )
+
+        assertEquals(com.example.models.RepairState.ROLLED_BACK, failedRepair.state)
+        assertTrue(failedRepair.verificationOutput?.contains("Verification Failed") == true)
+
+        // Scenario 2: Successful verification -> RECOVERED
+        val error2 = manager.recordError(
+            category = com.example.models.ErrorCategory.MISSING_API_KEY,
+            message = "Missing key for Gemini",
+            affectedComponent = "AIService",
+            operation = "Inference"
+        )
+        val repair2 = manager.proposeCodeRepair(
+            errorRecord = error2,
+            targetFile = "Service.kt",
+            sourceCode = "val apiKey = \"\""
+        )
+        val successRepair = manager.approveAndApplyPatch(
+            repairId = repair2.id,
+            fileWriter = { _, _ -> true },
+            verifier = { _ -> Pair(true, "All 42 tests passed.") }
+        )
+        assertEquals(com.example.models.RepairState.RECOVERED, successRepair.state)
+    }
+
+    @Test
+    fun `six-in-one agent tool registry covers all 6 domains with proper specifications`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService
+        )
+
+        val specs = registry.toolSpecs
+
+        // Verify each domain has registered tools
+        val codingTools = specs.filter { it.domain == com.example.models.AgentToolDomain.AI_CODING }
+        val buildTools = specs.filter { it.domain == com.example.models.AgentToolDomain.BUILD_TEST }
+        val webTools = specs.filter { it.domain == com.example.models.AgentToolDomain.BROWSER_WEB }
+        val phoneTools = specs.filter { it.domain == com.example.models.AgentToolDomain.PHONE_ACTIONS }
+        val memoryTools = specs.filter { it.domain == com.example.models.AgentToolDomain.PERSISTENT_MEMORY }
+        val brainTools = specs.filter { it.domain == com.example.models.AgentToolDomain.AI_BRAIN }
+
+        assertTrue("Tool 1: Coding tools count >= 4", codingTools.size >= 4)
+        assertTrue("Tool 2: Build tools count >= 3", buildTools.size >= 3)
+        assertTrue("Tool 3: Web tools count >= 4", webTools.size >= 4)
+        assertTrue("Tool 4: Phone tools count >= 8", phoneTools.size >= 8)
+        assertTrue("Tool 5: Memory tools count >= 3", memoryTools.size >= 3)
+        assertTrue("Tool 6: Brain tools count >= 1", brainTools.size >= 1)
+
+        // Verify write_project_file requires confirmation
+        val writeSpec = registry.getToolSpec("write_project_file")
+        assertTrue(writeSpec != null && writeSpec.requiresConfirmation)
+
+        // Verify rollback_file_checkpoint requires confirmation
+        val rollbackSpec = registry.getToolSpec("rollback_file_checkpoint")
+        assertTrue(rollbackSpec != null && rollbackSpec.requiresConfirmation)
+    }
+
+    @Test
+    fun `tool 1 - coding file operations create checkpoints and track modified files`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val codingEngine = com.example.services.ai.AutonomousCodingEngine(aiService)
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService,
+            codingEngine = codingEngine
+        )
+
+        // Test writing a project file
+        val testFileName = "test_script.kt"
+        java.io.File(context.filesDir, testFileName).delete()
+        codingEngine.clearCheckpoints()
+
+        val initialContent = "fun hello() = println(\"Hasseena A1\")"
+        val writeRes = registry.executeTool(
+            "write_project_file",
+            mapOf("file_path" to testFileName, "content" to initialContent, "reason" to "Initial write")
+        ) {}
+
+        assertTrue(writeRes.success)
+        assertTrue(writeRes.modifiedFiles.isNotEmpty())
+
+        // Test reading the written file
+        val readRes = registry.executeTool("read_project_file", mapOf("file_path" to testFileName)) {}
+        assertTrue(readRes.success)
+        assertTrue(readRes.output.contains("Hasseena A1"))
+
+        // Modify file and verify checkpoint creation
+        val updatedContent = "fun hello() = println(\"Hasseena A1 Mission Control\")"
+        val updateRes = registry.executeTool(
+            "write_project_file",
+            mapOf("file_path" to testFileName, "content" to updatedContent, "reason" to "Update text")
+        ) {}
+        assertTrue(updateRes.success)
+
+        val checkpoints = codingEngine.checkpoints.value
+        assertTrue("Checkpoints should be created", checkpoints.isNotEmpty())
+        assertEquals("test_script.kt", java.io.File(checkpoints.first().file).name)
+        assertTrue(checkpoints.first().code.contains("Hasseena A1"))
+
+        // Test rollback
+        val rollbackRes = registry.executeTool(
+            "rollback_file_checkpoint",
+            mapOf("checkpoint_id" to checkpoints.first().id)
+        ) {}
+        assertTrue(rollbackRes.success)
+
+        val readAfterRollback = registry.executeTool("read_project_file", mapOf("file_path" to testFileName)) {}
+        assertTrue(readAfterRollback.output.contains("fun hello() = println(\"Hasseena A1\")"))
+
+        // Test move_project_file
+        val destFileName = "test_script_renamed.kt"
+        java.io.File(context.filesDir, destFileName).delete()
+        val moveRes = registry.executeTool(
+            "move_project_file",
+            mapOf("source_path" to testFileName, "destination_path" to destFileName)
+        ) {}
+        assertTrue(moveRes.success)
+        assertTrue(java.io.File(context.filesDir, destFileName).exists())
+
+        // Test analyze_code_diagnostics
+        val diagRes = registry.executeTool("analyze_code_diagnostics", mapOf("file_path" to destFileName)) {}
+        assertTrue(diagRes.success)
+        assertTrue(diagRes.output.contains("Diagnostics"))
+    }
+
+    @Test
+    fun `tool 2 - real build and test executor validates project integrity and parses errors`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+        val healing = com.example.services.healing.SelfHealingManager(context, memory, aiService)
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService,
+            selfHealingManager = healing
+        )
+
+        // 1. Run build verification check
+        val buildRes = registry.executeTool("run_build_check", mapOf("component" to "app")) {}
+        assertTrue(buildRes.success)
+        assertTrue(buildRes.output.contains("HASSEENA BUILD VERIFICATION REPORT"))
+
+        // 2. Run unit test suite
+        val testRes = registry.executeTool("run_unit_tests", mapOf("test_target" to "ExampleRobolectricTest")) {}
+        assertTrue(testRes.success)
+        assertTrue(testRes.output.contains("HASSEENA TEST EXECUTOR RESULTS"))
+        assertTrue(testRes.output.contains("VERIFIED"))
+
+        // 3. Parse compiler log with errors -> auto-routes to Self-Healing
+        val compilerLog = "e: /app/src/main/Test.kt: (42, 12): Unresolved reference: BuildConfig.API_KEY"
+        val parseRes = registry.executeTool("parse_compiler_log", mapOf("log_text" to compilerLog)) {}
+        assertTrue(parseRes.success)
+        assertTrue(parseRes.output.contains("Unresolved reference"))
+
+        // 4. Verify APK artifact tool
+        val apkRes = registry.executeTool("verify_apk_artifact", mapOf("build_type" to "debug")) {}
+        assertTrue(apkRes.output.contains("APK") || apkRes.output.contains("com.aistudio.applet.ztvtvv"))
+
+        // Verify error was dispatched to Self-Healing memory store
+        val recordedErrors = memory.getErrorRecords()
+        assertTrue(recordedErrors.any { it.message.contains("Unresolved reference") || it.affectedComponent.contains("BuildExecutor") })
+    }
+
+    @Test
+    fun `tool 4 & 5 - phone accessibility and persistent queue management`() = kotlinx.coroutines.runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+        val keyStore = com.example.services.ai.ApiKeyStore(context)
+        val aiService = com.example.services.ai.AIService(control, keyStore)
+        val research = com.example.services.search.WebResearchService(aiService)
+        val db = com.example.services.memory.HasseenaDatabase.getInstance(context)
+        val memory = com.example.services.memory.MemoryRepository(db.hasseenaDao())
+
+        val registry = com.example.services.agent.AgentToolRegistry(
+            context = context,
+            androidControlService = control,
+            appLauncherService = launcher,
+            webResearchService = research,
+            memoryRepository = memory,
+            aiService = aiService
+        )
+
+        // Test manage_mission_queue
+        val queueRes = registry.executeTool("manage_mission_queue", mapOf("action" to "LIST")) {}
+        assertTrue(queueRes.success)
+        assertTrue(queueRes.output.contains("Persistent Mission Queue"))
+
+        // Test accessibility tools gracefully report service status when inactive
+        val screenRes = registry.executeTool("accessibility_read_screen", emptyMap()) {}
+        assertFalse(screenRes.success)
+        assertTrue(screenRes.output.contains("Accessibility Service is not active"))
+
+        val clickRes = registry.executeTool("accessibility_click", mapOf("label" to "Next")) {}
+        assertFalse(clickRes.success)
+
+        val inputRes = registry.executeTool("accessibility_input_text", mapOf("label" to "Search", "text" to "Query")) {}
+        assertFalse(inputRes.success)
+    }
 }
+

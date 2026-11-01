@@ -2,6 +2,8 @@ package com.example.services.memory
 
 import com.example.models.AgentStep
 import com.example.models.AgentTask
+import com.example.models.SelfHealingRepairRecord
+import com.example.models.SystemErrorRecord
 import kotlinx.coroutines.flow.Flow
 import java.util.Locale
 
@@ -13,6 +15,17 @@ class MemoryRepository(private val dao: HasseenaDao) {
     val automationTasksFlow: Flow<List<AutomationTaskEntity>> = dao.observeAutomationTasks()
     val knowledgeItemsFlow: Flow<List<KnowledgeItemEntity>> = dao.observeKnowledgeItems()
     val agentTasksFlow: Flow<List<AgentTask>> = dao.observeAgentTasks()
+    val errorRecordsFlow: Flow<List<SystemErrorRecord>> = dao.observeErrorRecords()
+    val selfHealingRepairsFlow: Flow<List<SelfHealingRepairRecord>> = dao.observeSelfHealingRepairs()
+
+    suspend fun getErrorRecords(): List<SystemErrorRecord> = dao.getErrorRecords()
+    suspend fun getErrorRecord(id: String): SystemErrorRecord? = dao.getErrorRecord(id)
+    suspend fun saveErrorRecord(record: SystemErrorRecord) = dao.insertOrUpdateErrorRecord(record)
+    suspend fun clearErrorRecords() = dao.clearErrorRecords()
+
+    suspend fun getSelfHealingRepairs(): List<SelfHealingRepairRecord> = dao.getSelfHealingRepairs()
+    suspend fun getSelfHealingRepair(id: String): SelfHealingRepairRecord? = dao.getSelfHealingRepair(id)
+    suspend fun saveRepairRecord(repair: SelfHealingRepairRecord) = dao.insertOrUpdateRepairRecord(repair)
 
     suspend fun getAgentTasks(): List<AgentTask> = dao.getAgentTasks()
     suspend fun getAgentTask(taskId: String): AgentTask? = dao.getAgentTask(taskId)

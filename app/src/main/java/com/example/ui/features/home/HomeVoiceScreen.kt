@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.FlashlightOff
 import androidx.compose.material.icons.filled.FlashlightOn
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Hub
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Mic
@@ -145,6 +146,7 @@ fun HomeVoiceScreen(
     onOpenProviders: () -> Unit = {},
     onOpenAvatar3D: () -> Unit = {},
     onOpenAgent: () -> Unit = {},
+    onOpenHealing: () -> Unit = {},
     onSelectActiveModel: (AIProviderType, String) -> Unit = { _, _ -> }
 ) {
     var commandText by rememberSaveable { mutableStateOf("") }
@@ -513,6 +515,67 @@ fun HomeVoiceScreen(
                         }
                         Text(
                             text = "Multi-step planning, tool execution, & real Android telemetry",
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Self-Healing AI Watchdog Tile
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpenHealing() }
+                    .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                    .testTag("home_self_healing_tile"),
+                colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(Color(0xFF00E5FF).copy(alpha = 0.15f), CircleShape)
+                            .border(1.dp, Color(0xFF00E5FF), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.HealthAndSafety,
+                            contentDescription = null,
+                            tint = Color(0xFF00E5FF),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Self-Healing AI Watchdog",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(Color(0xFF00E676).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                                ) {
+                                Text(text = "ACTIVE", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
+                            }
+                        }
+                        Text(
+                            text = "Automated error scrubbing, root cause diagnosis, & safe patch rollback",
                             fontSize = 11.sp,
                             color = TextSecondary,
                             maxLines = 1,

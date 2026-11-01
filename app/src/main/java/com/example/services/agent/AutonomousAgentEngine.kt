@@ -27,7 +27,8 @@ class AutonomousAgentEngine(
     private val aiService: AIService,
     private val toolRegistry: AgentToolRegistry,
     private val memoryRepository: MemoryRepository,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    var selfHealingManager: com.example.services.healing.SelfHealingManager? = null
 ) {
 
     private val _currentTask = MutableStateFlow<AgentTask?>(null)
@@ -98,7 +99,7 @@ class AutonomousAgentEngine(
 
     private suspend fun generatePlanForObjective(taskId: String, objective: String): AgentTask = withContext(Dispatchers.IO) {
         val toolsSchema = toolRegistry.toolSpecs.joinToString("\n") { spec ->
-            "- Tool ID: \"${spec.toolId}\" | Name: ${spec.name}\n" +
+            "- Tool ID: \"${spec.toolId}\" | Domain: ${spec.domain.label} | Name: ${spec.name}\n" +
             "  Description: ${spec.description}\n" +
             "  Required Args: ${spec.requiredArguments.joinToString(", ")}\n" +
             "  Optional Args: ${spec.optionalArguments.joinToString(", ")}\n" +
@@ -107,19 +108,27 @@ class AutonomousAgentEngine(
         }
 
         val prompt = """
-            You are the Task Planner for Hasseena A1 Autonomous AI Agent.
+            You are the Six-in-One Mission Control Planner for Hasseena A1 Autonomous AI Agent.
             The user wants to accomplish this objective:
             "$objective"
 
-            AVAILABLE TOOLS IN THE REGISTRY:
+            You have 6 integrated capability domains available in the tool registry:
+            1. Tool 1: AI Coding & Project Editing (read_project_file, write_project_file, list_project_files, propose_code_refactor, rollback_file_checkpoint)
+            2. Tool 2: Real Build & Test Executor (run_build_check, run_unit_tests, parse_compiler_log)
+            3. Tool 3: Internet & Browser Automation (web_search, deep_research, fetch_web_page, interact_web_form)
+            4. Tool 4: Android Phone Actions (accessibility_read_screen, accessibility_click, accessibility_input_text, accessibility_global_action, launch_app, get_device_telemetry, set_flashlight, set_volume, set_brightness, set_timer_alarm, place_phone_call, compose_sms)
+            5. Tool 5: Persistent Memory & Task Queue (search_knowledge, save_memory, manage_mission_queue)
+            6. Tool 6: AI Brain & Model API (synthesize_report)
+
+            AVAILABLE REGISTERED TOOLS:
             $toolsSchema
 
             RULES:
             1. Create a sequential, realistic step-by-step plan (between 2 to 6 steps, maximum 10).
             2. Every step MUST use one of the registered Tool IDs above. Never invent tool IDs.
             3. Each step must have concrete string arguments.
-            4. If the objective requires phone calls or SMS, set requiresConfirmation to true.
-            5. Final step should synthesize or present the findings if research or multi-part telemetry was gathered.
+            4. Mark requiresConfirmation as true for code edits, file writes, web forms, phone calls, or SMS.
+            5. Final step should synthesize or present findings with synthesize_report if research, telemetry, or code diffs were gathered.
             6. Output ONLY a valid JSON object matching this schema without markdown codeblocks or explanation:
             {
               "title": "Short descriptive title (max 6 words)",
@@ -151,7 +160,7 @@ class AutonomousAgentEngine(
             .trim()
 
         val parsed = json.parseToJsonElement(cleanJson).jsonObject
-        val title = parsed["title"]?.jsonPrimitive?.content ?: "Autonomous Task"
+        val title = parsed["title"]?.jsonPrimitive?.content ?: "Autonomous Mission"
         val overview = parsed["overview"]?.jsonPrimitive?.content ?: "Autonomous plan execution"
         val stepsJson = parsed["steps"]?.jsonArray ?: throw IllegalArgumentException("No steps array found in plan")
 
@@ -195,88 +204,19 @@ class AutonomousAgentEngine(
         val lower = objective.lowercase()
         val steps = mutableListOf<AgentStep>()
 
-        if (lower.contains("battery") || lower.contains("ram") || lower.contains("storage") || lower.contains("device") || lower.contains("telemetry") || lower.contains("system")) {
+        if (lower.contains("code") || lower.contains("file") || lower.contains("refactor") || lower.contains("bug") || lower.contains("edit") || lower.contains("class")) {
+            val targetFile = if (lower.contains("manifest")) "app/src/main/AndroidManifest.xml"
+                else if (lower.contains("gradle")) "app/build.gradle.kts"
+                else "app/src/main/java/com/example/MainActivity.kt"
+
             steps.add(
                 AgentStep(
                     id = "${taskId}_step_1",
                     stepNumber = 1,
-                    title = "Read Device Telemetry",
-                    description = "Collect real Android device status including battery, RAM, network, and storage.",
-                    toolId = "get_device_telemetry",
-                    status = AutonomousStepStatus.PENDING
-                )
-            )
-        }
-
-        if (lower.contains("flashlight") || lower.contains("torch")) {
-            val enable = !lower.contains("off")
-            steps.add(
-                AgentStep(
-                    id = "${taskId}_step_${steps.size + 1}",
-                    stepNumber = steps.size + 1,
-                    title = if (enable) "Turn On Flashlight" else "Turn Off Flashlight",
-                    description = "Control hardware camera torch.",
-                    toolId = "set_flashlight",
-                    toolArguments = mapOf("enabled" to enable.toString()),
-                    status = AutonomousStepStatus.PENDING
-                )
-            )
-        }
-
-        if (lower.contains("volume") || lower.contains("mute") || lower.contains("sound")) {
-            steps.add(
-                AgentStep(
-                    id = "${taskId}_step_${steps.size + 1}",
-                    stepNumber = steps.size + 1,
-                    title = "Adjust Media Volume",
-                    description = "Configure media sound volume level.",
-                    toolId = "set_volume",
-                    toolArguments = mapOf("percent" to "60"),
-                    status = AutonomousStepStatus.PENDING
-                )
-            )
-        }
-
-        if (lower.contains("brightness") || lower.contains("display")) {
-            steps.add(
-                AgentStep(
-                    id = "${taskId}_step_${steps.size + 1}",
-                    stepNumber = steps.size + 1,
-                    title = "Adjust Brightness",
-                    description = "Adjust screen brightness percent.",
-                    toolId = "set_brightness",
-                    toolArguments = mapOf("percent" to "70"),
-                    status = AutonomousStepStatus.PENDING
-                )
-            )
-        }
-
-        if (lower.contains("open") || lower.contains("launch")) {
-            val appTarget = objective.substringAfter("open", "").substringAfter("launch", "").trim().take(20)
-            if (appTarget.isNotBlank()) {
-                steps.add(
-                    AgentStep(
-                        id = "${taskId}_step_${steps.size + 1}",
-                        stepNumber = steps.size + 1,
-                        title = "Launch Application: $appTarget",
-                        description = "Open requested app or settings via Android package manager.",
-                        toolId = "launch_app",
-                        toolArguments = mapOf("app_name" to appTarget),
-                        status = AutonomousStepStatus.PENDING
-                    )
-                )
-            }
-        }
-
-        if (steps.isEmpty() || lower.contains("research") || lower.contains("search") || lower.contains("find") || lower.contains("explain") || lower.contains("how")) {
-            steps.add(
-                AgentStep(
-                    id = "${taskId}_step_1",
-                    stepNumber = 1,
-                    title = "Deep Web Research",
-                    description = "Search Wikipedia and web knowledge for factual data.",
-                    toolId = "web_search",
-                    toolArguments = mapOf("query" to objective),
+                    title = "Read Target Project File",
+                    description = "Inspect source code and structural invariants of $targetFile.",
+                    toolId = "read_project_file",
+                    toolArguments = mapOf("file_path" to targetFile),
                     status = AutonomousStepStatus.PENDING
                 )
             )
@@ -284,10 +224,11 @@ class AutonomousAgentEngine(
                 AgentStep(
                     id = "${taskId}_step_2",
                     stepNumber = 2,
-                    title = "Search Knowledge Base",
-                    description = "Check local saved documents and notes for relevant context.",
-                    toolId = "search_knowledge",
-                    toolArguments = mapOf("query" to objective),
+                    title = "Propose Code Refactoring",
+                    description = "Generate architectural improvement and diff patch for approval.",
+                    toolId = "propose_code_refactor",
+                    toolArguments = mapOf("file_path" to targetFile, "goal" to objective),
+                    requiresConfirmation = true,
                     status = AutonomousStepStatus.PENDING
                 )
             )
@@ -295,13 +236,188 @@ class AutonomousAgentEngine(
                 AgentStep(
                     id = "${taskId}_step_3",
                     stepNumber = 3,
-                    title = "Synthesize Findings",
-                    description = "Compile verified research into an executive answer.",
-                    toolId = "synthesize_report",
-                    toolArguments = mapOf("objective" to objective, "data_summary" to "Web and Knowledge results"),
+                    title = "Verify Build & Manifest",
+                    description = "Run real build checks to verify integrity.",
+                    toolId = "run_build_check",
+                    toolArguments = mapOf("component" to "app"),
                     status = AutonomousStepStatus.PENDING
                 )
             )
+        } else if (lower.contains("build") || lower.contains("test") || lower.contains("compile") || lower.contains("verify")) {
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_1",
+                    stepNumber = 1,
+                    title = "Run Build Verification",
+                    description = "Analyze Gradle build scripts, manifest, and compilation readiness.",
+                    toolId = "run_build_check",
+                    toolArguments = mapOf("component" to "app"),
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_2",
+                    stepNumber = 2,
+                    title = "Execute Unit Test Suite",
+                    description = "Run available test suites and verify assertions.",
+                    toolId = "run_unit_tests",
+                    toolArguments = mapOf("test_target" to "ExampleRobolectricTest"),
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_3",
+                    stepNumber = 3,
+                    title = "Synthesize Build & Test Report",
+                    description = "Compile verified test diagnostics into executive status.",
+                    toolId = "synthesize_report",
+                    toolArguments = mapOf("objective" to objective, "data_summary" to "Build and Test Verification"),
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+        } else if (lower.contains("screen") || lower.contains("accessibility") || lower.contains("click") || lower.contains("tap")) {
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_1",
+                    stepNumber = 1,
+                    title = "Inspect Active Screen",
+                    description = "Read visible text elements and interactive buttons on screen.",
+                    toolId = "accessibility_read_screen",
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_2",
+                    stepNumber = 2,
+                    title = "Read Device Telemetry",
+                    description = "Capture battery, RAM, network, and system state.",
+                    toolId = "get_device_telemetry",
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+            steps.add(
+                AgentStep(
+                    id = "${taskId}_step_3",
+                    stepNumber = 3,
+                    title = "Synthesize Screen Findings",
+                    description = "Summarize screen state and actionable controls.",
+                    toolId = "synthesize_report",
+                    toolArguments = mapOf("objective" to objective, "data_summary" to "Screen and Device telemetry"),
+                    status = AutonomousStepStatus.PENDING
+                )
+            )
+        } else {
+            if (lower.contains("battery") || lower.contains("ram") || lower.contains("storage") || lower.contains("device") || lower.contains("telemetry") || lower.contains("system")) {
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_1",
+                        stepNumber = 1,
+                        title = "Read Device Telemetry",
+                        description = "Collect real Android device status including battery, RAM, network, and storage.",
+                        toolId = "get_device_telemetry",
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+            }
+
+            if (lower.contains("flashlight") || lower.contains("torch")) {
+                val enable = !lower.contains("off")
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_${steps.size + 1}",
+                        stepNumber = steps.size + 1,
+                        title = if (enable) "Turn On Flashlight" else "Turn Off Flashlight",
+                        description = "Control hardware camera torch.",
+                        toolId = "set_flashlight",
+                        toolArguments = mapOf("enabled" to enable.toString()),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+            }
+
+            if (lower.contains("volume") || lower.contains("mute") || lower.contains("sound")) {
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_${steps.size + 1}",
+                        stepNumber = steps.size + 1,
+                        title = "Adjust Media Volume",
+                        description = "Configure media sound volume level.",
+                        toolId = "set_volume",
+                        toolArguments = mapOf("percent" to "60"),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+            }
+
+            if (lower.contains("brightness") || lower.contains("display")) {
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_${steps.size + 1}",
+                        stepNumber = steps.size + 1,
+                        title = "Adjust Brightness",
+                        description = "Adjust screen brightness percent.",
+                        toolId = "set_brightness",
+                        toolArguments = mapOf("percent" to "70"),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+            }
+
+            if (lower.contains("open") || lower.contains("launch")) {
+                val appTarget = objective.substringAfter("open", "").substringAfter("launch", "").trim().take(20)
+                if (appTarget.isNotBlank()) {
+                    steps.add(
+                        AgentStep(
+                            id = "${taskId}_step_${steps.size + 1}",
+                            stepNumber = steps.size + 1,
+                            title = "Launch Application: $appTarget",
+                            description = "Open requested app or settings via Android package manager.",
+                            toolId = "launch_app",
+                            toolArguments = mapOf("app_name" to appTarget),
+                            status = AutonomousStepStatus.PENDING
+                        )
+                    )
+                }
+            }
+
+            if (steps.isEmpty() || lower.contains("research") || lower.contains("search") || lower.contains("find") || lower.contains("explain") || lower.contains("how")) {
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_1",
+                        stepNumber = 1,
+                        title = "Deep Web Research",
+                        description = "Search Wikipedia and web knowledge for factual data.",
+                        toolId = "web_search",
+                        toolArguments = mapOf("query" to objective),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_2",
+                        stepNumber = 2,
+                        title = "Search Knowledge Base",
+                        description = "Check local saved documents and notes for relevant context.",
+                        toolId = "search_knowledge",
+                        toolArguments = mapOf("query" to objective),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+                steps.add(
+                    AgentStep(
+                        id = "${taskId}_step_3",
+                        stepNumber = 3,
+                        title = "Synthesize Findings",
+                        description = "Compile verified research into an executive answer.",
+                        toolId = "synthesize_report",
+                        toolArguments = mapOf("objective" to objective, "data_summary" to "Web and Knowledge results"),
+                        status = AutonomousStepStatus.PENDING
+                    )
+                )
+            }
         }
 
         return AgentTask(
@@ -423,9 +539,16 @@ class AutonomousAgentEngine(
                 completedSteps[i] = completedStep
                 collectedResults.add("Step ${completedStep.stepNumber} (${completedStep.title}):\n${outcome.output}")
 
+                val updatedFiles = if (outcome.modifiedFiles.isNotEmpty()) {
+                    (current.changedFiles + outcome.modifiedFiles).distinct()
+                } else {
+                    current.changedFiles
+                }
+
                 current = current.copy(
                     steps = completedSteps,
-                    currentStepIndex = i + 1
+                    currentStepIndex = i + 1,
+                    changedFiles = updatedFiles
                 )
                 _currentTask.value = current
                 memoryRepository.saveAgentTask(current)
@@ -442,6 +565,9 @@ class AutonomousAgentEngine(
                 current = current.copy(steps = failedSteps)
                 _currentTask.value = current
                 memoryRepository.saveAgentTask(current)
+
+                // Report failure to Self-Healing AI watchdog
+                selfHealingManager?.handleAgentStepFailure(failedStep, current, RuntimeException(outcome.error ?: "Step execution failed"))
 
                 // Check replanning
                 if (current.replanCount < 3) {

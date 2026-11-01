@@ -8,6 +8,14 @@ import com.example.models.AgentStep
 import com.example.models.AutonomousStepStatus
 import com.example.models.AgentTask
 import com.example.models.AgentTaskStatus
+import com.example.models.CodeDiffPatch
+import com.example.models.ErrorCategory
+import com.example.models.ErrorSeverity
+import com.example.models.RepairState
+import com.example.models.ResolutionStatus
+import com.example.models.RootCauseAnalysis
+import com.example.models.SelfHealingRepairRecord
+import com.example.models.SystemErrorRecord
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -116,6 +124,17 @@ interface HasseenaDao {
     suspend fun insertOrUpdateAgentTask(task: AgentTask)
     suspend fun insertOrUpdateAgentStep(step: AgentStep, taskId: String)
     suspend fun deleteAgentTask(taskId: String)
+
+    fun observeErrorRecords(): Flow<List<SystemErrorRecord>>
+    suspend fun getErrorRecords(): List<SystemErrorRecord>
+    suspend fun getErrorRecord(id: String): SystemErrorRecord?
+    suspend fun insertOrUpdateErrorRecord(record: SystemErrorRecord)
+    suspend fun clearErrorRecords()
+
+    fun observeSelfHealingRepairs(): Flow<List<SelfHealingRepairRecord>>
+    suspend fun getSelfHealingRepairs(): List<SelfHealingRepairRecord>
+    suspend fun getSelfHealingRepair(id: String): SelfHealingRepairRecord?
+    suspend fun insertOrUpdateRepairRecord(repair: SelfHealingRepairRecord)
 }
 
 class HasseenaDatabase private constructor(context: Context) :
@@ -128,6 +147,8 @@ class HasseenaDatabase private constructor(context: Context) :
     private val automationTasksState = MutableStateFlow<List<AutomationTaskEntity>>(emptyList())
     private val knowledgeItemsState = MutableStateFlow<List<KnowledgeItemEntity>>(emptyList())
     private val agentTasksState = MutableStateFlow<List<AgentTask>>(emptyList())
+    private val errorRecordsState = MutableStateFlow<List<SystemErrorRecord>>(emptyList())
+    private val selfHealingRepairsState = MutableStateFlow<List<SelfHealingRepairRecord>>(emptyList())
 
     private val daoImpl = object : HasseenaDao {
         override fun observeMessages(): Flow<List<ChatMessageEntity>> = messagesState.asStateFlow()
@@ -386,6 +407,7 @@ class HasseenaDatabase private constructor(context: Context) :
                     put("startTime", task.startTime)
                     put("completionTime", task.completionTime)
                     put("logsJson", json.encodeToString(task.logs))
+                    put("changedFilesJson", json.encodeToString(task.changedFiles))
                 }
                 db.insertWithOnConflict("agent_tasks", null, cv, SQLiteDatabase.CONFLICT_REPLACE)
                 for (step in task.steps) {
@@ -445,17 +467,89 @@ class HasseenaDatabase private constructor(context: Context) :
             }
             refreshAgentTasksStateInternal()
         }
+
+        override fun observeErrorRecords(): Flow<List<SystemErrorRecord>> = errorRecordsState.asStateFlow()
+
+        override suspend fun getErrorRecords(): List<SystemErrorRecord> = withContext(Dispatchers.IO) {
+            queryErrorRecordsInternal()
+        }
+
+        override suspend fun getErrorRecord(id: String): SystemErrorRecord? = withContext(Dispatchers.IO) {
+            queryErrorRecordByIdInternal(id)
+        }
+
+        override suspend fun insertOrUpdateErrorRecord(record: SystemErrorRecord) = withContext(Dispatchers.IO) {
+            val values = ContentValues().apply {
+                put("id", record.id)
+                put("category", record.category.name)
+                put("message", record.message)
+                put("affectedComponent", record.affectedComponent)
+                put("operation", record.operation)
+                put("timestamp", record.timestamp)
+                put("severity", record.severity.name)
+                put("stackTrace", record.stackTrace)
+                put("isTransient", if (record.isTransient) 1 else 0)
+                put("retryCount", record.retryCount)
+                put("maxRetries", record.maxRetries)
+                put("suggestedRecovery", record.suggestedRecovery)
+                put("resolutionStatus", record.resolutionStatus.name)
+                put("repairId", record.repairId)
+            }
+            writableDatabase.insertWithOnConflict("system_error_records", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            refreshErrorRecordsStateInternal()
+        }
+
+        override suspend fun clearErrorRecords() = withContext(Dispatchers.IO) {
+            writableDatabase.delete("system_error_records", null, null)
+            refreshErrorRecordsStateInternal()
+        }
+
+        override fun observeSelfHealingRepairs(): Flow<List<SelfHealingRepairRecord>> = selfHealingRepairsState.asStateFlow()
+
+        override suspend fun getSelfHealingRepairs(): List<SelfHealingRepairRecord> = withContext(Dispatchers.IO) {
+            querySelfHealingRepairsInternal()
+        }
+
+        override suspend fun getSelfHealingRepair(id: String): SelfHealingRepairRecord? = withContext(Dispatchers.IO) {
+            querySelfHealingRepairByIdInternal(id)
+        }
+
+        override suspend fun insertOrUpdateRepairRecord(repair: SelfHealingRepairRecord) = withContext(Dispatchers.IO) {
+            val rootCauseJson = repair.rootCauseAnalysis?.let { json.encodeToString(it) }
+            val proposedPatchJson = repair.proposedPatch?.let { json.encodeToString(it) }
+            val values = ContentValues().apply {
+                put("id", repair.id)
+                put("errorId", repair.errorId)
+                put("state", repair.state.name)
+                put("targetComponent", repair.targetComponent)
+                put("targetFile", repair.targetFile)
+                put("rootCauseJson", rootCauseJson)
+                put("proposedPatchJson", proposedPatchJson)
+                put("userApprovalStatus", repair.userApprovalStatus)
+                put("preRepairCheckpointId", repair.preRepairCheckpointId)
+                put("preRepairSnapshot", repair.preRepairSnapshot)
+                put("verificationOutput", repair.verificationOutput)
+                put("errorMessage", repair.errorMessage)
+                put("createdAt", repair.createdAt)
+                put("updatedAt", repair.updatedAt)
+            }
+            writableDatabase.insertWithOnConflict("self_healing_repairs", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+            refreshSelfHealingRepairsStateInternal()
+        }
     }
 
     init {
         ensureAutomationAndKnowledgeTables(writableDatabase)
         ensureAgentTables(writableDatabase)
+        ensureHealingTables(writableDatabase)
         refreshMessagesStateInternal()
         refreshMemoryFactsStateInternal()
         refreshCacheCountStateInternal()
         refreshAutomationTasksStateInternal()
         refreshKnowledgeItemsStateInternal()
         refreshAgentTasksStateInternal()
+        refreshErrorRecordsStateInternal()
+        refreshSelfHealingRepairsStateInternal()
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -501,6 +595,7 @@ class HasseenaDatabase private constructor(context: Context) :
         )
         ensureAutomationAndKnowledgeTables(db)
         ensureAgentTables(db)
+        ensureHealingTables(db)
     }
 
     private fun ensureAutomationAndKnowledgeTables(db: SQLiteDatabase) {
@@ -645,14 +740,10 @@ class HasseenaDatabase private constructor(context: Context) :
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS chat_messages")
-        db.execSQL("DROP TABLE IF EXISTS memory_facts")
-        db.execSQL("DROP TABLE IF EXISTS response_cache")
-        db.execSQL("DROP TABLE IF EXISTS automation_tasks")
-        db.execSQL("DROP TABLE IF EXISTS knowledge_items")
-        db.execSQL("DROP TABLE IF EXISTS agent_steps")
-        db.execSQL("DROP TABLE IF EXISTS agent_tasks")
-        onCreate(db)
+        // Safe database migration preserving existing user data, settings, mission history, and memories
+        ensureAutomationAndKnowledgeTables(db)
+        ensureAgentTables(db)
+        ensureHealingTables(db)
     }
 
     fun hasseenaDao(): HasseenaDao = daoImpl
@@ -853,10 +944,14 @@ class HasseenaDatabase private constructor(context: Context) :
                 currentStepIndex INTEGER NOT NULL,
                 startTime INTEGER NOT NULL,
                 completionTime INTEGER,
-                logsJson TEXT NOT NULL
+                logsJson TEXT NOT NULL,
+                changedFilesJson TEXT
             )
             """.trimIndent()
         )
+        try {
+            db.execSQL("ALTER TABLE agent_tasks ADD COLUMN changedFilesJson TEXT")
+        } catch (_: Exception) {}
         db.execSQL(
             """
             CREATE TABLE IF NOT EXISTS agent_steps (
@@ -887,38 +982,43 @@ class HasseenaDatabase private constructor(context: Context) :
         try {
             readableDatabase.query(
                 "agent_tasks",
-                arrayOf(
-                    "id", "title", "userObjective", "executionPlanOverview",
-                    "status", "finalResponse", "errorInformation",
-                    "replanCount", "currentStepIndex", "startTime",
-                    "completionTime", "logsJson"
-                ),
+                null,
                 null, null, null, null,
                 "startTime DESC"
             ).use { cursor ->
                 while (cursor.moveToNext()) {
-                    val taskId = cursor.getString(0)
-                    val title = cursor.getString(1)
-                    val objective = cursor.getString(2)
-                    val overview = cursor.getString(3)
-                    val statusStr = cursor.getString(4)
+                    val taskId = cursor.getString(cursor.getColumnIndexOrThrow("id"))
+                    val title = cursor.getString(cursor.getColumnIndexOrThrow("title"))
+                    val objective = cursor.getString(cursor.getColumnIndexOrThrow("userObjective"))
+                    val overview = cursor.getString(cursor.getColumnIndexOrThrow("executionPlanOverview"))
+                    val statusStr = cursor.getString(cursor.getColumnIndexOrThrow("status"))
                     val status = try {
                         AgentTaskStatus.valueOf(statusStr)
                     } catch (_: Exception) {
                         AgentTaskStatus.COMPLETED
                     }
-                    val finalResponse = if (cursor.isNull(5)) null else cursor.getString(5)
-                    val errorInfo = if (cursor.isNull(6)) null else cursor.getString(6)
-                    val replanCount = cursor.getInt(7)
-                    val currentStepIndex = cursor.getInt(8)
-                    val startTime = cursor.getLong(9)
-                    val completionTime = if (cursor.isNull(10)) null else cursor.getLong(10)
-                    val logsJson = cursor.getString(11) ?: "[]"
+                    val finalResponse = if (cursor.isNull(cursor.getColumnIndexOrThrow("finalResponse"))) null else cursor.getString(cursor.getColumnIndexOrThrow("finalResponse"))
+                    val errorInfo = if (cursor.isNull(cursor.getColumnIndexOrThrow("errorInformation"))) null else cursor.getString(cursor.getColumnIndexOrThrow("errorInformation"))
+                    val replanCount = cursor.getInt(cursor.getColumnIndexOrThrow("replanCount"))
+                    val currentStepIndex = cursor.getInt(cursor.getColumnIndexOrThrow("currentStepIndex"))
+                    val startTime = cursor.getLong(cursor.getColumnIndexOrThrow("startTime"))
+                    val completionTime = if (cursor.isNull(cursor.getColumnIndexOrThrow("completionTime"))) null else cursor.getLong(cursor.getColumnIndexOrThrow("completionTime"))
+                    val logsJsonIdx = cursor.getColumnIndex("logsJson")
+                    val logsJson = if (logsJsonIdx != -1 && !cursor.isNull(logsJsonIdx)) cursor.getString(logsJsonIdx) else "[]"
                     val logs: List<String> = try {
                         json.decodeFromString(logsJson)
                     } catch (_: Exception) {
                         emptyList()
                     }
+
+                    val changedFilesIdx = cursor.getColumnIndex("changedFilesJson")
+                    val changedFiles: List<String> = if (changedFilesIdx != -1 && !cursor.isNull(changedFilesIdx)) {
+                        try {
+                            json.decodeFromString(cursor.getString(changedFilesIdx))
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    } else emptyList()
 
                     val steps = queryAgentStepsForTaskInternal(taskId)
                     tasks.add(
@@ -935,7 +1035,8 @@ class HasseenaDatabase private constructor(context: Context) :
                             currentStepIndex = currentStepIndex,
                             startTime = startTime,
                             completionTime = completionTime,
-                            logs = logs
+                            logs = logs,
+                            changedFiles = changedFiles
                         )
                     )
                 }
@@ -949,36 +1050,41 @@ class HasseenaDatabase private constructor(context: Context) :
         try {
             readableDatabase.query(
                 "agent_tasks",
-                arrayOf(
-                    "id", "title", "userObjective", "executionPlanOverview",
-                    "status", "finalResponse", "errorInformation",
-                    "replanCount", "currentStepIndex", "startTime",
-                    "completionTime", "logsJson"
-                ),
+                null,
                 "id = ?", arrayOf(taskId), null, null, null
             ).use { cursor ->
                 if (cursor.moveToNext()) {
-                    val title = cursor.getString(1)
-                    val objective = cursor.getString(2)
-                    val overview = cursor.getString(3)
-                    val statusStr = cursor.getString(4)
+                    val title = cursor.getString(cursor.getColumnIndexOrThrow("title"))
+                    val objective = cursor.getString(cursor.getColumnIndexOrThrow("userObjective"))
+                    val overview = cursor.getString(cursor.getColumnIndexOrThrow("executionPlanOverview"))
+                    val statusStr = cursor.getString(cursor.getColumnIndexOrThrow("status"))
                     val status = try {
                         AgentTaskStatus.valueOf(statusStr)
                     } catch (_: Exception) {
                         AgentTaskStatus.COMPLETED
                     }
-                    val finalResponse = if (cursor.isNull(5)) null else cursor.getString(5)
-                    val errorInfo = if (cursor.isNull(6)) null else cursor.getString(6)
-                    val replanCount = cursor.getInt(7)
-                    val currentStepIndex = cursor.getInt(8)
-                    val startTime = cursor.getLong(9)
-                    val completionTime = if (cursor.isNull(10)) null else cursor.getLong(10)
-                    val logsJson = cursor.getString(11) ?: "[]"
+                    val finalResponse = if (cursor.isNull(cursor.getColumnIndexOrThrow("finalResponse"))) null else cursor.getString(cursor.getColumnIndexOrThrow("finalResponse"))
+                    val errorInfo = if (cursor.isNull(cursor.getColumnIndexOrThrow("errorInformation"))) null else cursor.getString(cursor.getColumnIndexOrThrow("errorInformation"))
+                    val replanCount = cursor.getInt(cursor.getColumnIndexOrThrow("replanCount"))
+                    val currentStepIndex = cursor.getInt(cursor.getColumnIndexOrThrow("currentStepIndex"))
+                    val startTime = cursor.getLong(cursor.getColumnIndexOrThrow("startTime"))
+                    val completionTime = if (cursor.isNull(cursor.getColumnIndexOrThrow("completionTime"))) null else cursor.getLong(cursor.getColumnIndexOrThrow("completionTime"))
+                    val logsJsonIdx = cursor.getColumnIndex("logsJson")
+                    val logsJson = if (logsJsonIdx != -1 && !cursor.isNull(logsJsonIdx)) cursor.getString(logsJsonIdx) else "[]"
                     val logs: List<String> = try {
                         json.decodeFromString(logsJson)
                     } catch (_: Exception) {
                         emptyList()
                     }
+
+                    val changedFilesIdx = cursor.getColumnIndex("changedFilesJson")
+                    val changedFiles: List<String> = if (changedFilesIdx != -1 && !cursor.isNull(changedFilesIdx)) {
+                        try {
+                            json.decodeFromString(cursor.getString(changedFilesIdx))
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                    } else emptyList()
 
                     val steps = queryAgentStepsForTaskInternal(taskId)
                     return AgentTask(
@@ -994,7 +1100,8 @@ class HasseenaDatabase private constructor(context: Context) :
                         currentStepIndex = currentStepIndex,
                         startTime = startTime,
                         completionTime = completionTime,
-                        logs = logs
+                        logs = logs,
+                        changedFiles = changedFiles
                     )
                 }
             }
@@ -1062,6 +1169,299 @@ class HasseenaDatabase private constructor(context: Context) :
         } catch (_: Exception) {
         }
         return steps
+    }
+
+    private fun ensureHealingTables(db: SQLiteDatabase) {
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS system_error_records (
+                id TEXT PRIMARY KEY NOT NULL,
+                category TEXT NOT NULL,
+                message TEXT NOT NULL,
+                affectedComponent TEXT NOT NULL,
+                operation TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                severity TEXT NOT NULL,
+                stackTrace TEXT,
+                isTransient INTEGER NOT NULL,
+                retryCount INTEGER NOT NULL,
+                maxRetries INTEGER NOT NULL,
+                suggestedRecovery TEXT NOT NULL,
+                resolutionStatus TEXT NOT NULL,
+                repairId TEXT
+            )
+            """.trimIndent()
+        )
+        db.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS self_healing_repairs (
+                id TEXT PRIMARY KEY NOT NULL,
+                errorId TEXT NOT NULL,
+                state TEXT NOT NULL,
+                targetComponent TEXT NOT NULL,
+                targetFile TEXT,
+                rootCauseJson TEXT,
+                proposedPatchJson TEXT,
+                userApprovalStatus TEXT NOT NULL,
+                preRepairCheckpointId TEXT,
+                preRepairSnapshot TEXT,
+                verificationOutput TEXT,
+                errorMessage TEXT,
+                createdAt INTEGER NOT NULL,
+                updatedAt INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+    }
+
+    private fun refreshErrorRecordsStateInternal() {
+        errorRecordsState.value = queryErrorRecordsInternal()
+    }
+
+    private fun queryErrorRecordsInternal(): List<SystemErrorRecord> {
+        val list = mutableListOf<SystemErrorRecord>()
+        try {
+            readableDatabase.query(
+                "system_error_records",
+                arrayOf(
+                    "id", "category", "message", "affectedComponent", "operation",
+                    "timestamp", "severity", "stackTrace", "isTransient", "retryCount",
+                    "maxRetries", "suggestedRecovery", "resolutionStatus", "repairId"
+                ),
+                null,
+                null,
+                null,
+                null,
+                "timestamp DESC"
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0)
+                    val catStr = cursor.getString(1)
+                    val category = try { ErrorCategory.valueOf(catStr) } catch (_: Exception) { ErrorCategory.RUNTIME_EXCEPTION }
+                    val message = cursor.getString(2)
+                    val affectedComponent = cursor.getString(3)
+                    val operation = cursor.getString(4)
+                    val timestamp = cursor.getLong(5)
+                    val sevStr = cursor.getString(6)
+                    val severity = try { ErrorSeverity.valueOf(sevStr) } catch (_: Exception) { ErrorSeverity.MEDIUM }
+                    val stackTrace = if (cursor.isNull(7)) null else cursor.getString(7)
+                    val isTransient = cursor.getInt(8) != 0
+                    val retryCount = cursor.getInt(9)
+                    val maxRetries = cursor.getInt(10)
+                    val suggestedRecovery = cursor.getString(11)
+                    val resStr = cursor.getString(12)
+                    val resolutionStatus = try { ResolutionStatus.valueOf(resStr) } catch (_: Exception) { ResolutionStatus.UNRESOLVED }
+                    val repairId = if (cursor.isNull(13)) null else cursor.getString(13)
+
+                    list.add(
+                        SystemErrorRecord(
+                            id = id,
+                            category = category,
+                            message = message,
+                            affectedComponent = affectedComponent,
+                            operation = operation,
+                            timestamp = timestamp,
+                            severity = severity,
+                            stackTrace = stackTrace,
+                            isTransient = isTransient,
+                            retryCount = retryCount,
+                            maxRetries = maxRetries,
+                            suggestedRecovery = suggestedRecovery,
+                            resolutionStatus = resolutionStatus,
+                            repairId = repairId
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return list
+    }
+
+    private fun queryErrorRecordByIdInternal(id: String): SystemErrorRecord? {
+        try {
+            readableDatabase.query(
+                "system_error_records",
+                arrayOf(
+                    "id", "category", "message", "affectedComponent", "operation",
+                    "timestamp", "severity", "stackTrace", "isTransient", "retryCount",
+                    "maxRetries", "suggestedRecovery", "resolutionStatus", "repairId"
+                ),
+                "id = ?",
+                arrayOf(id),
+                null,
+                null,
+                null
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val catStr = cursor.getString(1)
+                    val category = try { ErrorCategory.valueOf(catStr) } catch (_: Exception) { ErrorCategory.RUNTIME_EXCEPTION }
+                    val message = cursor.getString(2)
+                    val affectedComponent = cursor.getString(3)
+                    val operation = cursor.getString(4)
+                    val timestamp = cursor.getLong(5)
+                    val sevStr = cursor.getString(6)
+                    val severity = try { ErrorSeverity.valueOf(sevStr) } catch (_: Exception) { ErrorSeverity.MEDIUM }
+                    val stackTrace = if (cursor.isNull(7)) null else cursor.getString(7)
+                    val isTransient = cursor.getInt(8) != 0
+                    val retryCount = cursor.getInt(9)
+                    val maxRetries = cursor.getInt(10)
+                    val suggestedRecovery = cursor.getString(11)
+                    val resStr = cursor.getString(12)
+                    val resolutionStatus = try { ResolutionStatus.valueOf(resStr) } catch (_: Exception) { ResolutionStatus.UNRESOLVED }
+                    val repairId = if (cursor.isNull(13)) null else cursor.getString(13)
+
+                    return SystemErrorRecord(
+                        id = id,
+                        category = category,
+                        message = message,
+                        affectedComponent = affectedComponent,
+                        operation = operation,
+                        timestamp = timestamp,
+                        severity = severity,
+                        stackTrace = stackTrace,
+                        isTransient = isTransient,
+                        retryCount = retryCount,
+                        maxRetries = maxRetries,
+                        suggestedRecovery = suggestedRecovery,
+                        resolutionStatus = resolutionStatus,
+                        repairId = repairId
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return null
+    }
+
+    private fun refreshSelfHealingRepairsStateInternal() {
+        selfHealingRepairsState.value = querySelfHealingRepairsInternal()
+    }
+
+    private fun querySelfHealingRepairsInternal(): List<SelfHealingRepairRecord> {
+        val list = mutableListOf<SelfHealingRepairRecord>()
+        try {
+            readableDatabase.query(
+                "self_healing_repairs",
+                arrayOf(
+                    "id", "errorId", "state", "targetComponent", "targetFile",
+                    "rootCauseJson", "proposedPatchJson", "userApprovalStatus",
+                    "preRepairCheckpointId", "preRepairSnapshot", "verificationOutput",
+                    "errorMessage", "createdAt", "updatedAt"
+                ),
+                null,
+                null,
+                null,
+                null,
+                "createdAt DESC"
+            ).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(0)
+                    val errorId = cursor.getString(1)
+                    val stateStr = cursor.getString(2)
+                    val state = try { RepairState.valueOf(stateStr) } catch (_: Exception) { RepairState.DETECTED }
+                    val targetComponent = cursor.getString(3)
+                    val targetFile = if (cursor.isNull(4)) null else cursor.getString(4)
+                    val rootCauseJson = if (cursor.isNull(5)) null else cursor.getString(5)
+                    val rootCause: RootCauseAnalysis? = rootCauseJson?.let {
+                        try { json.decodeFromString<RootCauseAnalysis>(it) } catch (_: Exception) { null }
+                    }
+                    val proposedPatchJson = if (cursor.isNull(6)) null else cursor.getString(6)
+                    val proposedPatch: CodeDiffPatch? = proposedPatchJson?.let {
+                        try { json.decodeFromString<CodeDiffPatch>(it) } catch (_: Exception) { null }
+                    }
+                    val userApprovalStatus = cursor.getString(7)
+                    val preRepairCheckpointId = if (cursor.isNull(8)) null else cursor.getString(8)
+                    val preRepairSnapshot = if (cursor.isNull(9)) null else cursor.getString(9)
+                    val verificationOutput = if (cursor.isNull(10)) null else cursor.getString(10)
+                    val errorMessage = if (cursor.isNull(11)) null else cursor.getString(11)
+                    val createdAt = cursor.getLong(12)
+                    val updatedAt = cursor.getLong(13)
+
+                    list.add(
+                        SelfHealingRepairRecord(
+                            id = id,
+                            errorId = errorId,
+                            state = state,
+                            targetComponent = targetComponent,
+                            targetFile = targetFile,
+                            rootCauseAnalysis = rootCause,
+                            proposedPatch = proposedPatch,
+                            userApprovalStatus = userApprovalStatus,
+                            preRepairCheckpointId = preRepairCheckpointId,
+                            preRepairSnapshot = preRepairSnapshot,
+                            verificationOutput = verificationOutput,
+                            errorMessage = errorMessage,
+                            createdAt = createdAt,
+                            updatedAt = updatedAt
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return list
+    }
+
+    private fun querySelfHealingRepairByIdInternal(id: String): SelfHealingRepairRecord? {
+        try {
+            readableDatabase.query(
+                "self_healing_repairs",
+                arrayOf(
+                    "id", "errorId", "state", "targetComponent", "targetFile",
+                    "rootCauseJson", "proposedPatchJson", "userApprovalStatus",
+                    "preRepairCheckpointId", "preRepairSnapshot", "verificationOutput",
+                    "errorMessage", "createdAt", "updatedAt"
+                ),
+                "id = ?",
+                arrayOf(id),
+                null,
+                null,
+                null
+            ).use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val errorId = cursor.getString(1)
+                    val stateStr = cursor.getString(2)
+                    val state = try { RepairState.valueOf(stateStr) } catch (_: Exception) { RepairState.DETECTED }
+                    val targetComponent = cursor.getString(3)
+                    val targetFile = if (cursor.isNull(4)) null else cursor.getString(4)
+                    val rootCauseJson = if (cursor.isNull(5)) null else cursor.getString(5)
+                    val rootCause: RootCauseAnalysis? = rootCauseJson?.let {
+                        try { json.decodeFromString<RootCauseAnalysis>(it) } catch (_: Exception) { null }
+                    }
+                    val proposedPatchJson = if (cursor.isNull(6)) null else cursor.getString(6)
+                    val proposedPatch: CodeDiffPatch? = proposedPatchJson?.let {
+                        try { json.decodeFromString<CodeDiffPatch>(it) } catch (_: Exception) { null }
+                    }
+                    val userApprovalStatus = cursor.getString(7)
+                    val preRepairCheckpointId = if (cursor.isNull(8)) null else cursor.getString(8)
+                    val preRepairSnapshot = if (cursor.isNull(9)) null else cursor.getString(9)
+                    val verificationOutput = if (cursor.isNull(10)) null else cursor.getString(10)
+                    val errorMessage = if (cursor.isNull(11)) null else cursor.getString(11)
+                    val createdAt = cursor.getLong(12)
+                    val updatedAt = cursor.getLong(13)
+
+                    return SelfHealingRepairRecord(
+                        id = id,
+                        errorId = errorId,
+                        state = state,
+                        targetComponent = targetComponent,
+                        targetFile = targetFile,
+                        rootCauseAnalysis = rootCause,
+                        proposedPatch = proposedPatch,
+                        userApprovalStatus = userApprovalStatus,
+                        preRepairCheckpointId = preRepairCheckpointId,
+                        preRepairSnapshot = preRepairSnapshot,
+                        verificationOutput = verificationOutput,
+                        errorMessage = errorMessage,
+                        createdAt = createdAt,
+                        updatedAt = updatedAt
+                    )
+                }
+            }
+        } catch (_: Exception) {
+        }
+        return null
     }
 
     companion object {

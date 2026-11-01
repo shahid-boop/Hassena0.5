@@ -58,13 +58,25 @@ data class AgentTask(
     val currentStepIndex: Int = 0,
     val startTime: Long = System.currentTimeMillis(),
     val completionTime: Long? = null,
-    val logs: List<String> = emptyList()
+    val logs: List<String> = emptyList(),
+    val changedFiles: List<String> = emptyList()
 )
+
+@Serializable
+enum class AgentToolDomain(val label: String, val toolNumber: Int) {
+    AI_CODING("Tool 1: AI Coding & Files", 1),
+    BUILD_TEST("Tool 2: Build & Test Executor", 2),
+    BROWSER_WEB("Tool 3: Browser & Web", 3),
+    PHONE_ACTIONS("Tool 4: Phone Actions", 4),
+    PERSISTENT_MEMORY("Tool 5: Memory & Queue", 5),
+    AI_BRAIN("Tool 6: AI Brain & Planner", 6)
+}
 
 data class AgentToolSpec(
     val toolId: String,
     val name: String,
     val description: String,
+    val domain: AgentToolDomain = AgentToolDomain.AI_BRAIN,
     val requiredArguments: List<String> = emptyList(),
     val optionalArguments: List<String> = emptyList(),
     val requiresConfirmation: Boolean = false,
@@ -76,5 +88,7 @@ data class AgentToolResult(
     val success: Boolean,
     val output: String,
     val metadata: Map<String, String> = emptyMap(),
-    val error: String? = null
+    val error: String? = null,
+    val modifiedFiles: List<String> = emptyList()
 )
+

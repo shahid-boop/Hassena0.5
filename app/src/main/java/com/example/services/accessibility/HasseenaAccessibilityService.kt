@@ -151,6 +151,35 @@ class HasseenaAccessibilityService : AccessibilityService() {
         return targetNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
     }
 
+    fun inputTextIntoNode(targetLabel: String, textToEnter: String): Boolean {
+        val root = rootInActiveWindow ?: return false
+        val normalized = targetLabel.trim().lowercase(Locale.US)
+        val targetNode = findMatchingEditableNode(root, normalized) ?: return false
+        val arguments = android.os.Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, textToEnter)
+        }
+        return targetNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+    }
+
+    private fun findMatchingEditableNode(
+        node: AccessibilityNodeInfo?,
+        targetLower: String
+    ): AccessibilityNodeInfo? {
+        if (node == null || node.isPassword) return null
+        if (node.isEditable) {
+            val text = node.text?.toString()?.trim()?.lowercase(Locale.US) ?: ""
+            val desc = node.contentDescription?.toString()?.trim()?.lowercase(Locale.US) ?: ""
+            if (targetLower.isBlank() || text.contains(targetLower) || desc.contains(targetLower)) {
+                return node
+            }
+        }
+        for (i in 0 until node.childCount) {
+            val found = findMatchingEditableNode(node.getChild(i), targetLower)
+            if (found != null) return found
+        }
+        return null
+    }
+
     private fun findMatchingClickableNode(
         node: AccessibilityNodeInfo?,
         targetLower: String

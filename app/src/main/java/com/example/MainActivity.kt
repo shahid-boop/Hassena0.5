@@ -104,6 +104,8 @@ import com.example.ui.features.home.HomeVoiceScreen
 import com.example.ui.features.knowledge.RagKnowledgeScreen
 import com.example.ui.features.providers.AiProvidersScreen
 import com.example.ui.features.research.ResearchScreen
+import com.example.ui.features.healing.SelfHealingDashboardScreen
+import androidx.compose.material.icons.filled.HealthAndSafety
 import com.example.ui.features.settings.SettingsAndMemoryScreen
 import com.example.ui.features.visual_lens.VisualLensScreen
 import com.example.ui.features.voice.DedicatedVoiceScreen
@@ -311,6 +313,7 @@ fun HasseenaAssistantApp(
                 ) {
                     val hubModules = listOf(
                         Triple(HasseenaDestination.AUTONOMOUS_AGENT, "Autonomous Agent", "Multi-step planner & real device tool execution"),
+                        Triple(HasseenaDestination.SELF_HEALING, "Self-Healing AI", "Autonomous error watchdog, root-cause diagnosis & rollback"),
                         Triple(HasseenaDestination.AVATAR_3D, "3D Female Assistant", "Realistic 3D specialist & dual-monitor workstation"),
                         Triple(HasseenaDestination.CODING, "Coding Studio", "Syntax editing & code intelligence"),
                         Triple(HasseenaDestination.RAG_KNOWLEDGE, "RAG Knowledge", "Document grounding & citations"),
@@ -350,6 +353,7 @@ fun HasseenaAssistantApp(
                                     Icon(
                                         imageVector = when (dest) {
                                             HasseenaDestination.AUTONOMOUS_AGENT -> Icons.Default.Psychology
+                                            HasseenaDestination.SELF_HEALING -> Icons.Default.HealthAndSafety
                                             HasseenaDestination.AVATAR_3D -> Icons.Default.GraphicEq
                                             HasseenaDestination.CODING -> Icons.Default.Code
                                             HasseenaDestination.RAG_KNOWLEDGE -> Icons.Default.AutoAwesome
@@ -543,6 +547,9 @@ fun HasseenaAssistantApp(
                             },
                             onOpenAgent = {
                                 viewModel.navigateTo(HasseenaDestination.AUTONOMOUS_AGENT)
+                            },
+                            onOpenHealing = {
+                                viewModel.navigateTo(HasseenaDestination.SELF_HEALING)
                             },
                             onSelectActiveModel = { provider, modelId ->
                                 viewModel.selectActiveModel(provider, modelId)
@@ -774,6 +781,11 @@ fun HasseenaAssistantApp(
                         HasseenaDestination.AUTONOMOUS_AGENT -> AutonomousAgentScreen(
                             viewModel = viewModel,
                             onNavigateBack = { viewModel.navigateTo(HasseenaDestination.HOME) }
+                        )
+
+                        HasseenaDestination.SELF_HEALING -> SelfHealingDashboardScreen(
+                            viewModel = viewModel,
+                            onBackClick = { viewModel.navigateTo(HasseenaDestination.HOME) }
                         )
                     }
                 }

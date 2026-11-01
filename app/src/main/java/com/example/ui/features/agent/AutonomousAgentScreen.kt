@@ -32,22 +32,30 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.Terminal
+import com.example.models.AgentToolDomain
+import com.example.providers.HasseenaDestination
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -156,14 +164,14 @@ fun AutonomousAgentScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Autonomous Agent",
+                                text = "Autonomous Mission Control",
                                 color = TextPrimary,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Text(
-                            text = "Multi-Step Real Orchestration Engine",
+                            text = "Six-in-One Autonomous AI Agent System",
                             color = TextMuted,
                             fontSize = 11.sp
                         )
@@ -217,6 +225,16 @@ fun AutonomousAgentScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 0. Six-in-One Capabilities Status Banner
+            item {
+                SixInOneCapabilitiesCard(
+                    onSelectCapability = { prompt ->
+                        objectiveInput = prompt
+                        viewModel.submitAgentObjective(prompt)
+                    }
+                )
+            }
+
             // 1. Objective Input Card
             item {
                 ObjectiveInputCard(
@@ -260,6 +278,18 @@ fun AutonomousAgentScreen(
                     )
                 }
 
+                // 3b. Changed Files Card
+                if (task.changedFiles.isNotEmpty()) {
+                    item {
+                        ChangedFilesCard(
+                            files = task.changedFiles,
+                            onOpenFileInWorkspace = {
+                                viewModel.navigateTo(HasseenaDestination.FILE_WORKSPACE)
+                            }
+                        )
+                    }
+                }
+
                 // 4. Step Cards
                 if (task.steps.isNotEmpty()) {
                     item {
@@ -283,13 +313,17 @@ fun AutonomousAgentScreen(
                     }
 
                     items(task.steps) { step ->
+                        val spec = viewModel.agentToolRegistry.getToolSpec(step.toolId)
+                        val domainLabel = spec?.domain?.label ?: "Autonomous Tool"
                         StepExecutionCard(
                             step = step,
+                            domainLabel = domainLabel,
                             isExpanded = expandedStepId == step.id,
                             onToggleExpand = {
                                 expandedStepId = if (expandedStepId == step.id) null else step.id
                             },
-                            onRetry = { viewModel.retryAgentStep(step.stepNumber) }
+                            onRetry = { viewModel.retryAgentStep(step.stepNumber) },
+                            onOpenSelfHealing = { viewModel.navigateTo(HasseenaDestination.SELF_HEALING) }
                         )
                     }
                 }
@@ -503,20 +537,28 @@ private fun ObjectiveInputCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 PresetChip(
-                    label = "System Audit & Telemetry",
-                    onClick = { onSelectPreset("Check device battery, RAM, free storage, and network status and summarize health.") }
+                    label = "Tool 1: Refactor Code",
+                    onClick = { onSelectPreset("Read app/build.gradle.kts and propose clean dependency refactoring.") }
                 )
                 PresetChip(
-                    label = "Quantum Tech Research",
+                    label = "Tool 2: Build & Tests",
+                    onClick = { onSelectPreset("Run project build check and execute unit test suite.") }
+                )
+                PresetChip(
+                    label = "Tool 3: Quantum Research",
                     onClick = { onSelectPreset("Research latest breakthroughs in topological qubits and prepare a verified summary.") }
                 )
                 PresetChip(
-                    label = "Scan Notifications & Memory",
-                    onClick = { onSelectPreset("Read active system notifications, check stored knowledge base, and report pending items.") }
+                    label = "Tool 4: Screen & Telemetry",
+                    onClick = { onSelectPreset("Inspect the active screen via Accessibility and read device telemetry.") }
                 )
                 PresetChip(
-                    label = "Media & Night Mode Setup",
-                    onClick = { onSelectPreset("Adjust screen brightness to 30%, mute volume, and turn on the flashlight.") }
+                    label = "Tool 5: Knowledge & Memory",
+                    onClick = { onSelectPreset("Search local knowledge base for system protocols and save a memory directive.") }
+                )
+                PresetChip(
+                    label = "System Audit & Health",
+                    onClick = { onSelectPreset("Check device battery, RAM, free storage, and network status and summarize health.") }
                 )
             }
 
@@ -824,9 +866,11 @@ private fun StatusBadge(status: AgentTaskStatus) {
 @Composable
 private fun StepExecutionCard(
     step: AgentStep,
+    domainLabel: String,
     isExpanded: Boolean,
     onToggleExpand: () -> Unit,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onOpenSelfHealing: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -902,7 +946,23 @@ private fun StepExecutionCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Domain chip
+                Box(
+                    modifier = Modifier
+                        .background(CyberCyanDim.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = domainLabel.substringBefore(":"),
+                        color = CyberCyan,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
 
                 // Tool chip
                 Box(
@@ -910,7 +970,7 @@ private fun StepExecutionCard(
                         .background(ObsidianSurfaceElevated, RoundedCornerShape(6.dp))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    Text(text = step.toolId, color = CyberCyan, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(text = step.toolId, color = TextPrimary, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
                 }
 
                 Icon(
@@ -961,12 +1021,23 @@ private fun StepExecutionCard(
                         Text(text = "Error Details:", color = CoralAlert, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         Text(text = step.errorMessage, color = CoralAlert, fontSize = 11.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
-                            onClick = onRetry,
-                            modifier = Modifier.height(36.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = CyberCyan)
-                        ) {
-                            Text("Retry This Step", fontSize = 11.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = onRetry,
+                                modifier = Modifier.height(36.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CyberCyan)
+                            ) {
+                                Text("Retry This Step", fontSize = 11.sp)
+                            }
+                            Button(
+                                onClick = onOpenSelfHealing,
+                                modifier = Modifier.height(36.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = CoralAlert.copy(alpha = 0.2f), contentColor = CoralAlert)
+                            ) {
+                                Icon(imageVector = Icons.Default.Healing, contentDescription = null, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Self-Healing AI", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -1125,6 +1196,139 @@ private fun HistoryTaskItem(
             }
             IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete Task", tint = TextMuted, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SixInOneCapabilitiesCard(
+    onSelectCapability: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("agent_six_in_one_card"),
+        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
+        shape = RoundedCornerShape(16.dp),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CyberCyan.copy(alpha = 0.35f)))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = Icons.Default.Bolt, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Six-in-One Autonomous Capabilities",
+                        color = TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .background(EmeraldReady.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(text = "6/6 LINKED", color = EmeraldReady, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val capabilities = listOf(
+                Triple("1. Coding", Icons.Default.Code, "Read, edit, refactor files with safety rollback checkpoints"),
+                Triple("2. Build & Test", Icons.Default.Build, "Execute genuine builds, run test suites, parse stack traces"),
+                Triple("3. Web & Browser", Icons.Default.Language, "Deep research, documentation retrieval, form automation"),
+                Triple("4. Phone Actions", Icons.Default.Smartphone, "Screen reading, clicking, typing, sensors & telephony"),
+                Triple("5. Memory Queue", Icons.Default.Storage, "SQLite persistence, RAG knowledge store, task state queue"),
+                Triple("6. AI Brain", Icons.Default.Psychology, "Multi-model reasoning, plan decomposition, dynamic replanning")
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                capabilities.forEach { (name, icon, desc) ->
+                    Surface(
+                        onClick = {
+                            when {
+                                name.contains("Coding") -> onSelectCapability("Read project files, analyze architecture, and propose refactoring with checkpoint.")
+                                name.contains("Build") -> onSelectCapability("Run build verification and unit test suite.")
+                                name.contains("Web") -> onSelectCapability("Research latest quantum computing breakthroughs with source citations.")
+                                name.contains("Phone") -> onSelectCapability("Inspect active screen controls and read device telemetry.")
+                                name.contains("Memory") -> onSelectCapability("Search knowledge base for system protocols.")
+                                else -> onSelectCapability("Perform a complete system audit and summarize executive status.")
+                            }
+                        },
+                        color = ObsidianSurface,
+                        shape = RoundedCornerShape(10.dp),
+                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle)),
+                        modifier = Modifier.width(135.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = icon, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = name, color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = desc, color = TextMuted, fontSize = 9.sp, lineHeight = 13.sp, maxLines = 3)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChangedFilesCard(
+    files: List<String>,
+    onOpenFileInWorkspace: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("agent_changed_files_card"),
+        colors = CardDefaults.cardColors(containerColor = CyberCyan.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(14.dp),
+        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CyberCyan.copy(alpha = 0.5f)))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = Icons.Default.Code, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Modified Project Files (${files.size})",
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                TextButton(onClick = onOpenFileInWorkspace) {
+                    Text("Open Workspace", color = CyberCyan, fontSize = 11.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            files.forEach { file ->
+                Text(
+                    text = "  • $file",
+                    color = EmeraldReady,
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace
+                )
             }
         }
     }
