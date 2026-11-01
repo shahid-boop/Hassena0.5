@@ -208,8 +208,10 @@ fun SettingsAndMemoryScreen(
             // =================================================================
             0 -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 20.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Smart Router Mode
@@ -520,8 +522,10 @@ fun SettingsAndMemoryScreen(
             // =================================================================
             1 -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 20.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // On-Device Local Memory & Persistence Card (Zero login required)
@@ -843,8 +847,10 @@ fun SettingsAndMemoryScreen(
             2 -> {
                 val orbCfg = preferences.orbConfig
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 20.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Orb Color, Size, and Speed

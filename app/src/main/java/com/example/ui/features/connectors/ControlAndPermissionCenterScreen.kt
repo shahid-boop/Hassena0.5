@@ -217,8 +217,10 @@ fun ControlAndPermissionCenterScreen(
             // =================================================================
             0 -> {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     // Telemetry overview
@@ -595,9 +597,10 @@ fun ControlAndPermissionCenterScreen(
             1 -> {
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxWidth()
                         .testTag("permissions_center_list"),
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     item {
@@ -722,8 +725,10 @@ fun ControlAndPermissionCenterScreen(
                 }
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentPadding = PaddingValues(top = 4.dp, bottom = 64.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // Active Notifications Section

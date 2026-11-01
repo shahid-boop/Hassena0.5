@@ -460,6 +460,8 @@ fun AndroidControlsScreen(
             subtitle = "Check device information",
             onClick = { showInfoDialog = true }
         )
+
+        Spacer(modifier = Modifier.height(64.dp))
     }
 }
 
