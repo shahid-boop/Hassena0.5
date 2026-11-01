@@ -138,11 +138,16 @@ fun AutonomousAgentScreen(
     var expandedStepId by remember { mutableStateOf<String?>(null) }
 
     val listState = rememberLazyListState()
+    var lastObservedTaskId by remember { mutableStateOf<String?>(null) }
 
-    // Auto-scroll to top or current step when task updates
-    LaunchedEffect(currentTask?.currentStepIndex, currentTask?.status) {
-        if (currentTask != null && (currentTask?.currentStepIndex ?: 0) > 0) {
-            listState.animateScrollToItem(1)
+    // Auto-scroll to top only when a brand new task is created
+    LaunchedEffect(currentTask?.id) {
+        val currentId = currentTask?.id
+        if (currentId != null && currentId != lastObservedTaskId) {
+            lastObservedTaskId = currentId
+            runCatching {
+                listState.animateScrollToItem(0)
+            }
         }
     }
 
@@ -222,7 +227,7 @@ fun AutonomousAgentScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 0. Six-in-One Capabilities Status Banner

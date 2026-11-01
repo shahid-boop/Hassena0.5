@@ -42,12 +42,20 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -86,10 +94,27 @@ fun ChatStreamScreen(
 
     var inputText by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(messages.size, messages.lastOrNull()?.content?.length) {
+    // Smooth scroll down when a new message is added or user submits a prompt
+    LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.lastIndex)
+            runCatching {
+                listState.animateScrollToItem(messages.lastIndex)
+            }
+        }
+    }
+
+    // While streaming tokens, keep pinned to bottom if user is already near bottom without competing animations
+    LaunchedEffect(messages.lastOrNull()?.content?.length) {
+        if (messages.isNotEmpty() && isGenerating) {
+            val isAtBottom = !listState.canScrollForward ||
+                (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) >= messages.lastIndex - 1
+            if (isAtBottom) {
+                runCatching {
+                    listState.scrollToItem(messages.lastIndex)
+                }
+            }
         }
     }
 
@@ -166,28 +191,69 @@ fun ChatStreamScreen(
                 }
             }
         } else {
-            LazyColumn(
-                state = listState,
+            Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .testTag("chat_messages_list"),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .testTag("chatlog")
             ) {
-                items(messages, key = { it.id }) { msg ->
-                    ChatMessageCard(
-                        message = msg,
-                        onSpeak = { onSpeakMessage(msg.content) },
-                        onCopy = { onCopyMessage(msg.content) },
-                        onShare = { onShareMessage(msg.content) },
-                        onRetry = {
-                            val lastUser = messages.lastOrNull { it.role == "user" }?.content
-                            if (!lastUser.isNullOrBlank()) {
-                                onSendPrompt(lastUser)
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag("chat_messages_list"),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(messages, key = { it.id }) { msg ->
+                        ChatMessageCard(
+                            message = msg,
+                            onSpeak = { onSpeakMessage(msg.content) },
+                            onCopy = { onCopyMessage(msg.content) },
+                            onShare = { onShareMessage(msg.content) },
+                            onRetry = {
+                                val lastUser = messages.lastOrNull { it.role == "user" }?.content
+                                if (!lastUser.isNullOrBlank()) {
+                                    onSendPrompt(lastUser)
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
+                }
+
+                // Quick Floating Scroll-To-Bottom FAB when user scrolls up
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = listState.canScrollForward,
+                    enter = androidx.compose.animation.fadeIn(),
+                    exit = androidx.compose.animation.fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 8.dp, bottom = 8.dp)
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                runCatching {
+                                    listState.animateScrollToItem(messages.lastIndex)
+                                }
+                            }
+                        },
+                        containerColor = ObsidianSurfaceElevated,
+                        contentColor = CyberCyan,
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .border(1.dp, CyberCyan.copy(alpha = 0.5f), CircleShape)
+                            .testTag("scroll_to_bottom_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Scroll to bottom",
+                            tint = CyberCyan,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
