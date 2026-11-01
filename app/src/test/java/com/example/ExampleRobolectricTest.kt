@@ -585,5 +585,41 @@ class ExampleRobolectricTest {
         val inputRes = registry.executeTool("accessibility_input_text", mapOf("label" to "Search", "text" to "Query")) {}
         assertFalse(inputRes.success)
     }
+
+    @Test
+    fun `mobile core protocol interpolates tokens and sections accurately`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val launcher = AppLauncherService(context)
+        val control = AndroidControlService(context, launcher)
+
+        val prompt = com.example.services.ai.MobileCoreProtocol.buildSystemPrompt(
+            personality = com.example.models.AssistantPersonality.TECHNICAL_EXPERT,
+            controlService = control,
+            memoryContextPrompt = "User prefers Urdu and English.",
+            includeToolDirectives = true
+        )
+
+        // Verify Assistant identity
+        assertTrue(prompt.contains("You are Hasseena A1"))
+        assertTrue(prompt.contains("[SELF]"))
+        assertTrue(prompt.contains("[WHAT YOU CAN DO]"))
+        assertTrue(prompt.contains("[WHAT YOU CANNOT DO]"))
+        assertTrue(prompt.contains("[JUDGEMENT]"))
+        assertTrue(prompt.contains("[VOICE]"))
+        assertTrue(prompt.contains("[ACKNOWLEDGE BEFORE A SILENCE]"))
+        assertTrue(prompt.contains("[LANGUAGE]"))
+        assertTrue(prompt.contains("[UNTRUSTED CONTENT]"))
+        assertTrue(prompt.contains("[EXECUTION]"))
+        assertTrue(prompt.contains("[MOBILE PERMISSIONS AND PRIVACY]"))
+        assertTrue(prompt.contains("[MOBILE BACKGROUND AND LIFECYCLE]"))
+        assertTrue(prompt.contains("[CONFIRMATION AND RECOVERY]"))
+        assertTrue(prompt.contains("[APP MESSAGES AND SYSTEM EVENTS]"))
+        assertTrue(prompt.contains("[SPEED]"))
+
+        // Verify capabilities & limits interpolation
+        assertTrue(prompt.contains("Autonomous Mission Control (Six-in-One Engine)"))
+        assertTrue(prompt.contains("Cannot bypass the Android lock screen"))
+        assertTrue(prompt.contains("User prefers Urdu and English."))
+    }
 }
 

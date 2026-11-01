@@ -268,12 +268,12 @@ class AIService(
         val apiKey = getApiKeyForProvider(effectiveProvider)
         if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
             return@withContext StreamCompletionOutcome(
-                fullText = "API Key is not configured for ${effectiveProvider.displayName}. Please add this provider's API key in JARVIS Settings → API Key Manager.",
+                fullText = "API Key is not configured for ${effectiveProvider.displayName}. Please add this provider's API key in Hasseena Settings → API Key Manager.",
                 firstTokenLatencyMs = 0L,
                 totalLatencyMs = System.currentTimeMillis() - startMs,
                 isError = true,
                 errorTitle = "Missing ${effectiveProvider.displayName} API Key",
-                recoveryAction = "Open JARVIS Settings → API Key Manager and save the selected provider key. Local device commands may still work offline where permissions allow."
+                recoveryAction = "Open Hasseena Settings → API Key Manager and save the selected provider key. Local device commands may still work offline where permissions allow."
             )
         }
 
@@ -598,23 +598,12 @@ class AIService(
         memoryContextPrompt: String,
         includeToolDirectives: Boolean = true
     ): String {
-        val telemetry = controlService.getDeviceTelemetry()
-        return buildString {
-            append(personality.systemInstructionPrompt)
-            append("\n\n[LIVE ANDROID DEVICE TELEMETRY]\n")
-            append("- Device: ${telemetry.deviceModel} (${telemetry.androidVersion})\n")
-            append("- Battery: ${telemetry.batteryPercent}% (Charging: ${telemetry.isCharging})\n")
-            append("- Network: ${telemetry.networkTypeLabel}\n")
-            append("- Media Volume: ${telemetry.musicVolumePercent}% | Brightness: ${telemetry.screenBrightnessPercent}%\n")
-            if (includeToolDirectives) {
-                append("\n[REAL ANDROID TOOL TAGS]\n")
-                append("If the user's request includes performing a supported hardware action alongside a question, you may append one of these tags at the very end of your response so JARVIS executes it immediately:\n")
-                append("[TOOL:FLASHLIGHT_ON], [TOOL:FLASHLIGHT_OFF], [TOOL:VOLUME_UP], [TOOL:VOLUME_DOWN], [TOOL:OPEN_APP:AppName], [TOOL:BRIGHTNESS:50]\n")
-            }
-            if (memoryContextPrompt.isNotBlank()) {
-                append(memoryContextPrompt)
-            }
-        }
+        return MobileCoreProtocol.buildSystemPrompt(
+            personality = personality,
+            controlService = controlService,
+            memoryContextPrompt = memoryContextPrompt,
+            includeToolDirectives = includeToolDirectives
+        )
     }
 
     private fun executeEmbeddedToolDirectives(rawResponse: String): List<String> {
