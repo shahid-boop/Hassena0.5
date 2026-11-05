@@ -68,14 +68,18 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
 import com.example.ui.theme.ObsidianSurfaceGlass
+import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 
 @Composable
 fun AndroidControlsScreen(
@@ -270,7 +274,7 @@ fun AndroidControlsScreen(
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
             containerColor = ObsidianSurfaceElevated,
-            title = { Text("JARVIS Device Telemetry", fontWeight = FontWeight.Bold, color = TextPrimary) },
+            title = { Text("HASSEENA A1 Device Telemetry", fontWeight = FontWeight.Bold, color = TextPrimary) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     InfoRow("Model", telemetry.deviceModel)
@@ -307,7 +311,7 @@ fun AndroidControlsScreen(
                 modifier = Modifier
                     .size(40.dp)
                     .background(ObsidianSurfaceGlass, CircleShape)
-                    .border(1.dp, BorderSubtle, CircleShape)
+                    .border(1.dp, CyberCyan.copy(alpha = 0.3f), CircleShape)
                     .testTag("android_controls_back_button")
             ) {
                 Icon(
@@ -338,7 +342,7 @@ fun AndroidControlsScreen(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "JARVIS",
+                    text = "HASSEENA A1",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = CyberCyan,
@@ -356,12 +360,10 @@ fun AndroidControlsScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Hardware Controls Card (Flashlight, Brightness, Volume)
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp)),
-            colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-            shape = RoundedCornerShape(12.dp)
+        LiquidGlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            accentColor = CyberCyan,
+            cornerRadius = 16.dp
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text("HARDWARE QUICK CONTROLS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SolarGold, letterSpacing = 1.sp)
@@ -472,14 +474,13 @@ private fun ActionHubRow(
     subtitle: String,
     onClick: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { onClick() }
-            .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-        shape = RoundedCornerShape(12.dp)
+            .clickable { onClick() },
+        accentColor = CyberCyan,
+        cornerRadius = 14.dp
     ) {
         Row(
             modifier = Modifier
@@ -490,8 +491,8 @@ private fun ActionHubRow(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(ObsidianSurfaceElevated, RoundedCornerShape(10.dp))
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp)),
+                    .background(CyberCyan.copy(alpha = 0.12f), RoundedCornerShape(10.dp))
+                    .border(1.dp, CyberCyan.copy(alpha = 0.35f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(icon, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(20.dp))
@@ -507,7 +508,7 @@ private fun ActionHubRow(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = TextMuted,
+                tint = CyberCyan,
                 modifier = Modifier.size(20.dp)
             )
         }

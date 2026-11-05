@@ -86,11 +86,15 @@ import com.example.ui.theme.AmberThinking
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
+import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -321,13 +325,15 @@ fun VisualLensScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         // Viewfinder or Captured Image Box
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = ObsidianSurface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(230.dp)
+                .liquidGlass(
+                    cornerRadius = 20.dp,
+                    accentGlow = CyberCyan,
+                    borderAlpha = 0.35f
+                )
         ) {
             when {
                 selectedVideoUri != null && videoPlayer != null -> {
@@ -546,11 +552,10 @@ fun VisualLensScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         // Streaming Vision Output Card
-        Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = ObsidianSurface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, if (isAnalyzing) CyberCyan else BorderSubtle),
-            modifier = Modifier.fillMaxWidth()
+        LiquidGlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            accentColor = if (isAnalyzing) AmberThinking else CyberCyan,
+            cornerRadius = 18.dp
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -579,7 +584,7 @@ fun VisualLensScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = analysisText.ifBlank {
-                        "Capture or pick an image, or tap 'Screen' to inspect the active Android UI via JARVIS Accessibility Service."
+                        "Capture or pick an image, or tap 'Screen' to inspect the active Android UI via Hasseena Accessibility Service."
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = TextPrimary

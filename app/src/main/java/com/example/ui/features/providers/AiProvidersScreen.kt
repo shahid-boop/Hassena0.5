@@ -64,6 +64,8 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
@@ -73,6 +75,7 @@ import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 
 @Composable
 fun AiProvidersScreen(
@@ -211,7 +214,7 @@ fun AiProvidersScreen(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "JARVIS",
+                    text = "HASSEENA A1",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = CyberCyan,
@@ -234,7 +237,7 @@ fun AiProvidersScreen(
                     containerColor = CyberCyan,
                     contentColor = Color.Black
                 ),
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(10.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -246,12 +249,10 @@ fun AiProvidersScreen(
         Spacer(modifier = Modifier.height(14.dp))
 
         // Security Notice Banner
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, CyberCyanDim.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
-            colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-            shape = RoundedCornerShape(10.dp)
+        LiquidGlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            accentColor = QuantumViolet,
+            cornerRadius = 14.dp
         ) {
             Row(
                 modifier = Modifier
@@ -288,16 +289,10 @@ fun AiProvidersScreen(
                     SupportedModelsCatalog.models.filter { it.provider == provider }
                 }
 
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            1.dp,
-                            if (isCurrentActive) CyberCyan else BorderSubtle,
-                            RoundedCornerShape(12.dp)
-                        ),
-                    colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-                    shape = RoundedCornerShape(12.dp)
+                LiquidGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    accentColor = if (isCurrentActive) CyberCyan else if (isConfigured) EmeraldReady else CyberCyan.copy(alpha = 0.25f),
+                    cornerRadius = 14.dp
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

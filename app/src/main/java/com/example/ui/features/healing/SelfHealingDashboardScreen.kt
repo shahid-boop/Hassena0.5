@@ -90,6 +90,15 @@ import com.example.models.ResolutionStatus
 import com.example.models.SelfHealingRepairRecord
 import com.example.models.SystemErrorRecord
 import com.example.providers.HasseenaViewModel
+import com.example.ui.theme.CyberCyan
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassPill
+import com.example.ui.theme.LiquidGlassTokens
+import com.example.ui.theme.ObsidianBackground
+import com.example.ui.theme.ObsidianSurface
+import com.example.ui.theme.ObsidianSurfaceElevated
+import com.example.ui.theme.QuantumViolet
+import com.example.ui.theme.liquidGlass
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -346,14 +355,10 @@ fun HealthStatusCard(
         else -> "Critical Watch"
     }
 
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF141923)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.2f), RoundedCornerShape(20.dp))
+    LiquidGlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = scoreColor,
+        cornerRadius = 20.dp
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -379,7 +384,7 @@ fun HealthStatusCard(
                     modifier = Modifier
                         .size(64.dp)
                         .clip(CircleShape)
-                        .background(scoreColor.copy(alpha = 0.12f))
+                        .background(scoreColor.copy(alpha = 0.15f))
                         .border(2.dp, scoreColor, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
@@ -437,9 +442,11 @@ fun MetricPill(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1E2534))
-            .border(1.dp, color.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .liquidGlass(
+                cornerRadius = 12.dp,
+                accentGlow = color,
+                borderAlpha = 0.35f
+            )
             .padding(vertical = 10.dp, horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -464,12 +471,10 @@ fun QuickSimulatorCard(
     onSimulateSyntax: () -> Unit,
     onSimulateMissingKey: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161C26)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(16.dp))
+    LiquidGlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        accentColor = CyberCyan,
+        cornerRadius = 16.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -539,13 +544,12 @@ fun TelemetryWatchdogCard(
     isExpanded: Boolean,
     onToggle: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F141C)),
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.25f), RoundedCornerShape(16.dp))
-            .animateContentSize()
+            .animateContentSize(),
+        accentColor = CyberCyan,
+        cornerRadius = 16.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -651,17 +655,12 @@ fun ErrorDetailItemCard(
         else -> Icons.Default.Warning
     }
 
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF161C26)),
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                1.dp,
-                if (!errorRecord.resolutionStatus.isResolved) severityColor.copy(alpha = 0.4f) else Color.White.copy(alpha = 0.08f),
-                RoundedCornerShape(16.dp)
-            )
-            .animateContentSize()
+            .animateContentSize(),
+        accentColor = if (!errorRecord.resolutionStatus.isResolved) severityColor else CyberCyan.copy(alpha = 0.4f),
+        cornerRadius = 16.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             // Header Row: Category, Severity, and Status

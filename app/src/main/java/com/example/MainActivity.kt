@@ -120,8 +120,14 @@ import com.example.ui.theme.HasseenaTheme
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
+import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.LiquidGlassTokens
+import com.example.ui.theme.LiquidGlassBackdrop
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassButton
+import com.example.ui.theme.liquidGlass
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -223,30 +229,51 @@ fun HasseenaAssistantApp(
     if (confirmation != null) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissPendingConfirmation() },
-            containerColor = ObsidianSurfaceElevated,
+            containerColor = Color(0xEB0D1527),
+            modifier = Modifier
+                .padding(16.dp)
+                .liquidGlass(
+                    shape = RoundedCornerShape(LiquidGlassTokens.DialogCornerRadius),
+                    elevation = 20.dp,
+                    borderBrush = LiquidGlassTokens.GlassRimBrush,
+                    surfaceBrush = LiquidGlassTokens.GlassElevatedBrush
+                ),
             titleContentColor = TextPrimary,
             textContentColor = TextSecondary,
             title = {
-                Text(text = confirmation.title)
+                Text(
+                    text = confirmation.title,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
             },
             text = {
-                Text(text = confirmation.description)
+                Text(
+                    text = confirmation.description,
+                    color = TextSecondary,
+                    fontSize = 13.sp
+                )
             },
             confirmButton = {
                 Button(
                     onClick = { viewModel.confirmPendingAction() },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = CyberCyan,
-                        contentColor = Color.Black
+                        contentColor = Color(0xFF030712)
                     ),
-                    modifier = Modifier.testTag("confirm_sensitive_action_button")
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = CyberCyan)
+                        .testTag("confirm_sensitive_action_button")
                 ) {
-                    Text(confirmation.confirmButtonText)
+                    Text(confirmation.confirmButtonText, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 OutlinedButton(
                     onClick = { viewModel.dismissPendingConfirmation() },
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CoralAlert.copy(alpha = 0.6f)),
                     modifier = Modifier.testTag("cancel_sensitive_action_button")
                 ) {
                     Text("Cancel", color = CoralAlert)
@@ -293,7 +320,15 @@ fun HasseenaAssistantApp(
     if (showMoreHub) {
         AlertDialog(
             onDismissRequest = { showMoreHub = false },
-            containerColor = ObsidianSurfaceElevated,
+            containerColor = Color(0xEB0B1220),
+            modifier = Modifier
+                .padding(14.dp)
+                .liquidGlass(
+                    shape = RoundedCornerShape(LiquidGlassTokens.DialogCornerRadius),
+                    elevation = 22.dp,
+                    borderBrush = LiquidGlassTokens.GlassRimBrush,
+                    surfaceBrush = LiquidGlassTokens.GlassElevatedBrush
+                ),
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -301,7 +336,7 @@ fun HasseenaAssistantApp(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("JARVIS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CyberCyan, letterSpacing = 1.sp)
+                        Text("HASSEENA A1", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CyberCyan, letterSpacing = 1.sp)
                         Text("Command Modules", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     }
                     IconButton(onClick = { showMoreHub = false }, modifier = Modifier.size(28.dp)) {
@@ -333,33 +368,34 @@ fun HasseenaAssistantApp(
                     )
 
                     hubModules.forEach { (dest, label, desc) ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    viewModel.navigateTo(dest)
-                                    showMoreHub = false
-                                }
-                                .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp)),
-                            colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-                            shape = RoundedCornerShape(10.dp)
+                        LiquidGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = 4.dp,
+                            borderBrush = LiquidGlassTokens.GlassSubtleBorderBrush,
+                            surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush,
+                            onClick = {
+                                viewModel.navigateTo(dest)
+                                showMoreHub = false
+                            }
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(10.dp),
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
-                                        .background(CyberCyan.copy(alpha = 0.12f), CircleShape)
-                                        .border(1.dp, CyberCyan.copy(alpha = 0.3f), CircleShape),
+                                        .size(36.dp)
+                                        .shadow(6.dp, CircleShape, spotColor = CyberCyan)
+                                        .background(Brush.linearGradient(listOf(Color(0x3300F0FF), Color(0x33A855F7))), CircleShape)
+                                        .border(1.2.dp, Brush.linearGradient(listOf(CyberCyan, QuantumViolet)), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = when (dest) {
-                                            HasseenaDestination.AUTONOMOUS_AGENT -> Icons.Default.Psychology
+                                             HasseenaDestination.AUTONOMOUS_AGENT -> Icons.Default.Psychology
                                             HasseenaDestination.SELF_HEALING -> Icons.Default.HealthAndSafety
                                             HasseenaDestination.AVATAR_3D -> Icons.Default.GraphicEq
                                             HasseenaDestination.CODING -> Icons.Default.Code
@@ -373,10 +409,10 @@ fun HasseenaAssistantApp(
                                         },
                                         contentDescription = null,
                                         tint = CyberCyan,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
                                 Column {
                                     Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                                     Text(desc, fontSize = 10.sp, color = TextSecondary)
@@ -393,9 +429,9 @@ fun HasseenaAssistantApp(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF050711), Color(0xFF0A1022), Color(0xFF070A14))))
+            .background(ObsidianBackground)
     ) {
-        Hasseena3DBackdrop(modifier = Modifier.fillMaxSize())
+        LiquidGlassBackdrop(modifier = Modifier.fillMaxSize())
         val isExpandedScreen = maxWidth >= 640.dp
 
         Scaffold(
@@ -405,10 +441,19 @@ fun HasseenaAssistantApp(
                 if (!isExpandedScreen) {
                     NavigationBar(
                         modifier = Modifier
-                            .padding(horizontal = 10.dp, vertical = 7.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(Brush.verticalGradient(listOf(Color(0xEE18243D), Color(0xF5091020))))
-                            .border(1.dp, Color(0x8846DDFB), RoundedCornerShape(24.dp)),
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                            .liquidGlass(
+                                shape = RoundedCornerShape(26.dp),
+                                elevation = 16.dp,
+                                borderBrush = LiquidGlassTokens.GlassRimBrush,
+                                borderWidth = 1.2.dp,
+                                surfaceBrush = Brush.verticalGradient(
+                                    listOf(
+                                        Color(0x99111C35),
+                                        Color(0xB3091022)
+                                    )
+                                )
+                            ),
                         containerColor = Color.Transparent,
                         contentColor = TextPrimary,
                         tonalElevation = 0.dp
@@ -419,18 +464,51 @@ fun HasseenaAssistantApp(
                                 selected = selected,
                                 onClick = { viewModel.navigateTo(dest) },
                                 icon = {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = label,
-                                        tint = if (selected) CyberCyan else TextSecondary,
-                                        modifier = Modifier.size(20.dp)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .shadow(
+                                                elevation = if (selected) 10.dp else 0.dp,
+                                                shape = RoundedCornerShape(12.dp),
+                                                spotColor = CyberCyan
+                                            )
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .then(
+                                                if (selected) {
+                                                    Modifier.background(
+                                                        Brush.linearGradient(
+                                                            listOf(Color(0x4D00F0FF), Color(0x33A855F7))
+                                                        )
+                                                    )
+                                                } else Modifier
+                                            )
+                                            .border(
+                                                width = if (selected) 1.2.dp else 0.dp,
+                                                brush = if (selected) LiquidGlassTokens.GlassRimBrush else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = label,
+                                            tint = if (selected) CyberCyan else TextSecondary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                },
+                                label = {
+                                    Text(
+                                        text = label,
+                                        fontSize = 10.sp,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (selected) CyberCyan else TextSecondary
                                     )
                                 },
-                                label = { Text(text = label, fontSize = 10.sp) },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = CyberCyan,
                                     selectedTextColor = CyberCyan,
-                                    indicatorColor = CyberCyan.copy(alpha = 0.2f),
+                                    indicatorColor = Color.Transparent,
                                     unselectedIconColor = TextSecondary,
                                     unselectedTextColor = TextSecondary
                                 ),
@@ -443,18 +521,51 @@ fun HasseenaAssistantApp(
                             selected = showMoreHub,
                             onClick = { showMoreHub = true },
                             icon = {
-                                Icon(
-                                    imageVector = Icons.Default.MoreHoriz,
-                                    contentDescription = "More",
-                                    tint = if (showMoreHub) CyberCyan else TextSecondary,
-                                    modifier = Modifier.size(20.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .shadow(
+                                            elevation = if (showMoreHub) 10.dp else 0.dp,
+                                            shape = RoundedCornerShape(12.dp),
+                                            spotColor = CyberCyan
+                                        )
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .then(
+                                            if (showMoreHub) {
+                                                Modifier.background(
+                                                    Brush.linearGradient(
+                                                        listOf(Color(0x4D00F0FF), Color(0x33A855F7))
+                                                    )
+                                                )
+                                            } else Modifier
+                                        )
+                                        .border(
+                                            width = if (showMoreHub) 1.2.dp else 0.dp,
+                                            brush = if (showMoreHub) LiquidGlassTokens.GlassRimBrush else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreHoriz,
+                                        contentDescription = "More",
+                                        tint = if (showMoreHub) CyberCyan else TextSecondary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = "More",
+                                    fontSize = 10.sp,
+                                    fontWeight = if (showMoreHub) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (showMoreHub) CyberCyan else TextSecondary
                                 )
                             },
-                            label = { Text(text = "More", fontSize = 10.sp) },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = CyberCyan,
                                 selectedTextColor = CyberCyan,
-                                indicatorColor = CyberCyan.copy(alpha = 0.2f),
+                                indicatorColor = Color.Transparent,
                                 unselectedIconColor = TextSecondary,
                                 unselectedTextColor = TextSecondary
                             ),
@@ -804,119 +915,7 @@ fun HasseenaAssistantApp(
 /** Shared ambient sci-fi backdrop used behind every authenticated destination. */
 @Composable
 private fun Hasseena3DBackdrop(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        // Soft cyan/violet volumetric glows.
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x3320DFFF), Color.Transparent),
-                center = Offset(w * 0.12f, h * 0.18f),
-                radius = w * 0.58f
-            ), radius = w * 0.58f, center = Offset(w * 0.12f, h * 0.18f)
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0x2D8B5CFF), Color.Transparent),
-                center = Offset(w * 0.94f, h * 0.68f),
-                radius = w * 0.62f
-            ), radius = w * 0.62f, center = Offset(w * 0.94f, h * 0.68f)
-        )
-        // Fine perspective grid, intentionally subtle so content remains readable.
-        val gridColor = Color(0x1429C8EF)
-        val gap = 34.dp.toPx()
-        var x = 0f
-        while (x <= w) {
-            drawLine(gridColor, Offset(x, h * 0.60f), Offset(x, h), strokeWidth = 0.7.dp.toPx())
-            x += gap
-        }
-        var y = h * 0.62f
-        while (y <= h) {
-            drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.7.dp.toPx())
-            y += gap
-        }
-        // Holographic orbit rings in the upper field.
-        val center = Offset(w * 0.83f, h * 0.13f)
-        listOf(54f, 72f, 91f).forEachIndexed { index, radiusDp ->
-            drawCircle(
-                color = if (index == 1) Color(0x2445DDF5) else Color(0x1B9C76FF),
-                radius = radiusDp.dp.toPx(),
-                center = center,
-                style = Stroke(width = if (index == 1) 1.2.dp.toPx() else 0.7.dp.toPx())
-            )
-        }
-        drawCircle(Color(0x6685F3FF), radius = 2.2.dp.toPx(), center = center)
-    }
-}
-
-@Composable
-private fun HasseenaBottomNavigationBar(
-    currentDestination: HasseenaDestination,
-    items: List<Triple<HasseenaDestination, String, ImageVector>>,
-    onSelect: (HasseenaDestination) -> Unit
-) {
-    NavigationBar(
-        modifier = Modifier
-            .padding(horizontal = 10.dp, vertical = 7.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xEE18243D), Color(0xF5091020))))
-            .border(1.dp, Color(0x8846DDFB), RoundedCornerShape(24.dp)),
-        containerColor = Color.Transparent,
-        contentColor = TextPrimary,
-        tonalElevation = 0.dp
-    ) {
-        items.forEach { (dest, label, icon) ->
-            val selected = currentDestination == dest
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onSelect(dest) },
-                icon = {
-                    // Raised holographic icon tile; preserves the original Material icon semantics.
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .shadow(
-                                elevation = if (selected) 12.dp else 5.dp,
-                                shape = RoundedCornerShape(14.dp),
-                                ambientColor = if (selected) CyberCyan else Color(0xFF415B88),
-                                spotColor = if (selected) CyberCyan else Color(0xFF415B88)
-                            )
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    if (selected) listOf(Color(0xFF9AF7FF), Color(0xFF37BDEB), Color(0xFF6158D9))
-                                    else listOf(Color(0xFF263954), Color(0xFF111C31), Color(0xFF202A47))
-                                )
-                            )
-                            .border(
-                                width = if (selected) 1.4.dp else 0.8.dp,
-                                color = if (selected) Color(0xFFD2FCFF) else Color(0x664BDCF5),
-                                shape = RoundedCornerShape(14.dp)
-                            ),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = label,
-                            tint = if (selected) Color(0xFF071525) else Color(0xFF9CEBFA),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                },
-                label = {
-                    Text(text = label)
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.Black,
-                    selectedTextColor = CyberCyan,
-                    indicatorColor = CyberCyan,
-                    unselectedIconColor = TextSecondary,
-                    unselectedTextColor = TextSecondary
-                ),
-                modifier = Modifier.testTag("nav_${dest.route}")
-            )
-        }
-    }
+    LiquidGlassBackdrop(modifier = modifier)
 }
 
 @Composable
@@ -926,7 +925,16 @@ private fun HasseenaSideNavigationRail(
     onSelect: (HasseenaDestination) -> Unit
 ) {
     NavigationRail(
-        containerColor = ObsidianSurface,
+        modifier = Modifier
+            .padding(vertical = 12.dp, horizontal = 8.dp)
+            .liquidGlass(
+                shape = RoundedCornerShape(24.dp),
+                elevation = 16.dp,
+                borderBrush = LiquidGlassTokens.GlassRimBrush,
+                borderWidth = 1.2.dp,
+                surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush
+            ),
+        containerColor = Color.Transparent,
         contentColor = TextPrimary
     ) {
         items.forEach { (dest, label, icon) ->
@@ -939,40 +947,50 @@ private fun HasseenaSideNavigationRail(
                         modifier = Modifier
                             .size(44.dp)
                             .shadow(
-                                elevation = if (selected) 12.dp else 5.dp,
-                                shape = RoundedCornerShape(15.dp),
-                                ambientColor = if (selected) CyberCyan else Color(0xFF415B88),
-                                spotColor = if (selected) CyberCyan else Color(0xFF415B88)
+                                elevation = if (selected) 12.dp else 2.dp,
+                                shape = RoundedCornerShape(14.dp),
+                                ambientColor = if (selected) CyberCyan else Color.Transparent,
+                                spotColor = if (selected) CyberCyan else Color.Transparent
                             )
-                            .clip(RoundedCornerShape(15.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    if (selected) listOf(Color(0xFF9AF7FF), Color(0xFF37BDEB), Color(0xFF6158D9))
-                                    else listOf(Color(0xFF263954), Color(0xFF111C31), Color(0xFF202A47))
-                                )
+                            .clip(RoundedCornerShape(14.dp))
+                            .then(
+                                if (selected) {
+                                    Modifier.background(
+                                        Brush.linearGradient(
+                                            listOf(Color(0x4D00F0FF), Color(0x33A855F7))
+                                        )
+                                    )
+                                } else {
+                                    Modifier.background(Color(0x22111C35))
+                                }
                             )
                             .border(
-                                width = if (selected) 1.4.dp else 0.8.dp,
-                                color = if (selected) Color(0xFFD2FCFF) else Color(0x664BDCF5),
-                                shape = RoundedCornerShape(15.dp)
+                                width = if (selected) 1.2.dp else 0.8.dp,
+                                brush = if (selected) LiquidGlassTokens.GlassRimBrush else LiquidGlassTokens.GlassSubtleBorderBrush,
+                                shape = RoundedCornerShape(14.dp)
                             ),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = icon,
                             contentDescription = label,
-                            tint = if (selected) Color(0xFF071525) else Color(0xFF9CEBFA),
-                            modifier = Modifier.size(23.dp)
+                            tint = if (selected) CyberCyan else TextSecondary,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 },
                 label = {
-                    Text(text = label)
+                    Text(
+                        text = label,
+                        fontSize = 10.sp,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected) CyberCyan else TextSecondary
+                    )
                 },
                 colors = NavigationRailItemDefaults.colors(
-                    selectedIconColor = Color.Black,
+                    selectedIconColor = CyberCyan,
                     selectedTextColor = CyberCyan,
-                    indicatorColor = CyberCyan,
+                    indicatorColor = Color.Transparent,
                     unselectedIconColor = TextSecondary,
                     unselectedTextColor = TextSecondary
                 ),

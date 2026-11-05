@@ -108,13 +108,19 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassPill
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
 import com.example.ui.theme.ObsidianSurfaceGlass
+import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.VioletNeon
+import com.example.ui.theme.liquidGlass
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -483,13 +489,12 @@ private fun ObjectiveInputCard(
     onSubmit: () -> Unit,
     onSelectPreset: (String) -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_objective_input_card"),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-        shape = RoundedCornerShape(16.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle))
+        accentColor = CyberCyan,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -521,12 +526,12 @@ private fun ObjectiveInputCard(
                 },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = CyberCyan,
-                    unfocusedBorderColor = BorderSubtle,
+                    unfocusedBorderColor = CyberCyan.copy(alpha = 0.25f),
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary,
                     cursorColor = CyberCyan,
-                    focusedContainerColor = ObsidianSurface,
-                    unfocusedContainerColor = ObsidianSurface
+                    focusedContainerColor = Color.White.copy(alpha = 0.04f),
+                    unfocusedContainerColor = Color.White.copy(alpha = 0.02f)
                 ),
                 shape = RoundedCornerShape(12.dp),
                 maxLines = 4
@@ -578,16 +583,16 @@ private fun ObjectiveInputCard(
                     .testTag("agent_plan_button"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CyberCyan,
-                    contentColor = Color.White,
-                    disabledContainerColor = CyberCyanDim.copy(alpha = 0.5f),
+                    contentColor = Color.Black,
+                    disabledContainerColor = CyberCyanDim.copy(alpha = 0.3f),
                     disabledContentColor = TextMuted
                 ),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             ) {
                 if (isPlanning) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(18.dp),
-                        color = Color.White,
+                        color = Color.Black,
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -604,22 +609,14 @@ private fun ObjectiveInputCard(
 
 @Composable
 private fun PresetChip(label: String, onClick: () -> Unit) {
-    Surface(
+    LiquidGlassPill(
+        label = label,
+        icon = Icons.Default.Bolt,
+        accentColor = CyberCyan,
+        isSelected = true,
         onClick = onClick,
-        color = ObsidianSurfaceGlass,
-        shape = RoundedCornerShape(8.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle)),
         modifier = Modifier.height(32.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(imageVector = Icons.Default.Bolt, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(12.dp))
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(text = label, color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
-        }
-    }
+    )
 }
 
 @Composable
@@ -628,13 +625,12 @@ private fun PendingPermissionCard(
     onAuthorize: () -> Unit,
     onDeny: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_pending_permission_card"),
-        colors = CardDefaults.cardColors(containerColor = CoralAlert.copy(alpha = 0.15f)),
-        shape = RoundedCornerShape(14.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CoralAlert))
+        accentColor = CoralAlert,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -698,13 +694,12 @@ private fun TaskOverviewCard(
     onCancel: () -> Unit,
     onRetry: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_task_overview_card"),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-        shape = RoundedCornerShape(16.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle))
+        accentColor = CyberCyan,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -877,31 +872,20 @@ private fun StepExecutionCard(
     onRetry: () -> Unit,
     onOpenSelfHealing: () -> Unit = {}
 ) {
-    Card(
+    val stepAccent = when (step.status) {
+        AutonomousStepStatus.RUNNING -> CyberCyan
+        AutonomousStepStatus.COMPLETED -> EmeraldReady
+        AutonomousStepStatus.FAILED -> CoralAlert
+        AutonomousStepStatus.WAITING_CONFIRMATION -> AmberThinking
+        else -> CyberCyan.copy(alpha = 0.35f)
+    }
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggleExpand() }
             .testTag("agent_step_card_${step.stepNumber}"),
-        colors = CardDefaults.cardColors(
-            containerColor = when (step.status) {
-                AutonomousStepStatus.RUNNING -> ObsidianSurfaceGlass
-                AutonomousStepStatus.FAILED -> CoralAlert.copy(alpha = 0.08f)
-                AutonomousStepStatus.COMPLETED -> ObsidianSurface
-                else -> ObsidianSurface
-            }
-        ),
-        shape = RoundedCornerShape(12.dp),
-        border = CardDefaults.outlinedCardBorder().copy(
-            brush = androidx.compose.ui.graphics.SolidColor(
-                when (step.status) {
-                    AutonomousStepStatus.RUNNING -> CyberCyan
-                    AutonomousStepStatus.COMPLETED -> EmeraldReady.copy(alpha = 0.6f)
-                    AutonomousStepStatus.FAILED -> CoralAlert
-                    AutonomousStepStatus.WAITING_CONFIRMATION -> AmberThinking
-                    else -> BorderSubtle
-                }
-            )
-        )
+        accentColor = stepAccent,
+        cornerRadius = 14.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -1057,13 +1041,12 @@ private fun ExecutiveReportCard(
     onCopy: () -> Unit,
     onSpeak: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_executive_report_card"),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-        shape = RoundedCornerShape(16.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(EmeraldReady))
+        accentColor = EmeraldReady,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -1092,8 +1075,11 @@ private fun ExecutiveReportCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(ObsidianSurface, RoundedCornerShape(10.dp))
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
+                    .liquidGlass(
+                        cornerRadius = 10.dp,
+                        accentGlow = EmeraldReady,
+                        borderAlpha = 0.25f
+                    )
                     .padding(12.dp)
             ) {
                 Text(
@@ -1113,14 +1099,13 @@ private fun CollapsibleTerminalLogs(
     isExpanded: Boolean,
     onToggle: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onToggle() }
             .testTag("agent_terminal_logs_card"),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-        shape = RoundedCornerShape(14.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle))
+        accentColor = CyberCyan,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -1210,13 +1195,12 @@ private fun HistoryTaskItem(
 private fun SixInOneCapabilitiesCard(
     onSelectCapability: (String) -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_six_in_one_card"),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-        shape = RoundedCornerShape(16.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CyberCyan.copy(alpha = 0.35f)))
+        accentColor = QuantumViolet,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -1261,23 +1245,27 @@ private fun SixInOneCapabilitiesCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 capabilities.forEach { (name, icon, desc) ->
-                    Surface(
-                        onClick = {
-                            when {
-                                name.contains("Coding") -> onSelectCapability("Read project files, analyze architecture, and propose refactoring with checkpoint.")
-                                name.contains("Build") -> onSelectCapability("Run build verification and unit test suite.")
-                                name.contains("Web") -> onSelectCapability("Research latest quantum computing breakthroughs with source citations.")
-                                name.contains("Phone") -> onSelectCapability("Inspect active screen controls and read device telemetry.")
-                                name.contains("Memory") -> onSelectCapability("Search knowledge base for system protocols.")
-                                else -> onSelectCapability("Perform a complete system audit and summarize executive status.")
+                    Box(
+                        modifier = Modifier
+                            .width(135.dp)
+                            .liquidGlass(
+                                cornerRadius = 12.dp,
+                                accentGlow = CyberCyan,
+                                borderAlpha = 0.3f
+                            )
+                            .clickable {
+                                when {
+                                    name.contains("Coding") -> onSelectCapability("Read project files, analyze architecture, and propose refactoring with checkpoint.")
+                                    name.contains("Build") -> onSelectCapability("Run build verification and unit test suite.")
+                                    name.contains("Web") -> onSelectCapability("Research latest quantum computing breakthroughs with source citations.")
+                                    name.contains("Phone") -> onSelectCapability("Inspect active screen controls and read device telemetry.")
+                                    name.contains("Memory") -> onSelectCapability("Search knowledge base for system protocols.")
+                                    else -> onSelectCapability("Perform a complete system audit and summarize executive status.")
+                                }
                             }
-                        },
-                        color = ObsidianSurface,
-                        shape = RoundedCornerShape(10.dp),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(BorderSubtle)),
-                        modifier = Modifier.width(135.dp)
+                            .padding(10.dp)
                     ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
+                        Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = icon, contentDescription = null, tint = CyberCyan, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
@@ -1298,13 +1286,12 @@ private fun ChangedFilesCard(
     files: List<String>,
     onOpenFileInWorkspace: () -> Unit
 ) {
-    Card(
+    LiquidGlassCard(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("agent_changed_files_card"),
-        colors = CardDefaults.cardColors(containerColor = CyberCyan.copy(alpha = 0.08f)),
-        shape = RoundedCornerShape(14.dp),
-        border = CardDefaults.outlinedCardBorder().copy(brush = androidx.compose.ui.graphics.SolidColor(CyberCyan.copy(alpha = 0.5f)))
+        accentColor = CyberCyan,
+        cornerRadius = LiquidGlassTokens.CardCornerRadius
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(

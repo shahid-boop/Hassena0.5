@@ -98,14 +98,22 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
 import com.example.ui.theme.ObsidianSurfaceGlass
 import com.example.ui.theme.QuantumViolet
+import com.example.ui.theme.QuantumVioletLight
 import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.LiquidGlassTokens
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassButton
+import com.example.ui.theme.LiquidGlassPill
+import com.example.ui.theme.liquidGlass
 import com.example.ui.widgets.orb.HasseenaOrb
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -188,14 +196,15 @@ fun HomeVoiceScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .background(CyberCyan.copy(alpha = 0.15f), CircleShape)
-                        .border(1.dp, CyberCyan.copy(alpha = 0.5f), CircleShape),
+                        .size(42.dp)
+                        .shadow(10.dp, CircleShape, spotColor = CyberCyan)
+                        .background(Brush.linearGradient(listOf(Color(0x4D00F0FF), Color(0x33A855F7))), CircleShape)
+                        .border(1.2.dp, Brush.linearGradient(listOf(CyberCyan, QuantumVioletLight)), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.SmartToy,
-                        contentDescription = "JARVIS Logo",
+                        contentDescription = "Hasseena Logo",
                         tint = CyberCyan,
                         modifier = Modifier.size(22.dp)
                     )
@@ -203,14 +212,14 @@ fun HomeVoiceScreen(
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "JARVIS",
+                        text = "HASSEENA A1",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = CyberCyan,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.2.sp
                     )
                     Text(
-                        text = "AI ASSISTANT",
+                        text = "AUTONOMOUS AI",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -218,23 +227,25 @@ fun HomeVoiceScreen(
                 }
             }
 
-            // Weather & Clock Pill
-            Surface(
-                color = ObsidianSurface,
-                shape = RoundedCornerShape(12.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+            // Weather & Clock Pill with 3D Liquid Glass
+            Box(
+                modifier = Modifier
+                    .liquidGlass(
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = 6.dp,
+                        borderBrush = LiquidGlassTokens.GlassSubtleBorderBrush,
+                        surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.WbSunny,
                         contentDescription = "Weather",
                         tint = SolarGold,
                         modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "24°C Partly Cloudy",
@@ -259,13 +270,13 @@ fun HomeVoiceScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // System Status Card (Left 55%)
-            Card(
-                modifier = Modifier
-                    .weight(1.15f)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(14.dp)),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-                shape = RoundedCornerShape(14.dp)
+            // System Status Card (Left 55%) - 3D Liquid Glass
+            LiquidGlassCard(
+                modifier = Modifier.weight(1.15f),
+                shape = RoundedCornerShape(16.dp),
+                elevation = 8.dp,
+                borderBrush = LiquidGlassTokens.GlassRimBrush,
+                surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Text(
@@ -287,14 +298,14 @@ fun HomeVoiceScreen(
                 }
             }
 
-            // AI Model Card (Right 45%)
-            Card(
-                modifier = Modifier
-                    .weight(0.85f)
-                    .border(1.dp, CyberCyanDim.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
-                    .clickable { showModelDropdown = true },
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-                shape = RoundedCornerShape(14.dp)
+            // AI Model Card (Right 45%) - 3D Liquid Glass
+            LiquidGlassCard(
+                modifier = Modifier.weight(0.85f),
+                shape = RoundedCornerShape(16.dp),
+                elevation = 8.dp,
+                borderBrush = LiquidGlassTokens.GlassSubtleBorderBrush,
+                surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush,
+                onClick = { showModelDropdown = true }
             ) {
                 Column(
                     modifier = Modifier
@@ -309,15 +320,21 @@ fun HomeVoiceScreen(
                     )
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    Surface(
-                        color = ObsidianSurfaceElevated,
-                        shape = RoundedCornerShape(8.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .liquidGlass(
+                                shape = RoundedCornerShape(10.dp),
+                                elevation = 2.dp,
+                                borderBrush = LiquidGlassTokens.GlassSubtleBorderBrush,
+                                surfaceBrush = Brush.verticalGradient(
+                                    listOf(Color(0x40162545), Color(0x330B1220))
+                                )
+                            )
+                            .padding(horizontal = 8.dp, vertical = 6.dp)
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -345,6 +362,7 @@ fun HomeVoiceScreen(
                         Box(
                             modifier = Modifier
                                 .size(6.dp)
+                                .shadow(4.dp, CircleShape, spotColor = EmeraldReady)
                                 .background(EmeraldReady, CircleShape)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
@@ -359,7 +377,9 @@ fun HomeVoiceScreen(
                     DropdownMenu(
                         expanded = showModelDropdown,
                         onDismissRequest = { showModelDropdown = false },
-                        modifier = Modifier.background(ObsidianSurfaceElevated)
+                        modifier = Modifier
+                            .background(Color(0xEB0D1527))
+                            .border(1.dp, LiquidGlassTokens.GlassSubtleBorderBrush, RoundedCornerShape(12.dp))
                     ) {
                         SupportedModelsCatalog.models.take(6).forEach { model ->
                             DropdownMenuItem(
@@ -466,26 +486,28 @@ fun HomeVoiceScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Card(
+            LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onOpenAgent() }
-                    .border(1.dp, CyberCyan.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
                     .testTag("home_autonomous_agent_tile"),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = 6.dp,
+                borderBrush = LiquidGlassTokens.GlassRimBrush,
+                surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush,
+                onClick = { onOpenAgent() }
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .background(CyberCyan.copy(alpha = 0.15f), CircleShape)
-                            .border(1.dp, CyberCyan, CircleShape),
+                            .size(38.dp)
+                            .shadow(8.dp, CircleShape, spotColor = CyberCyan)
+                            .background(Brush.linearGradient(listOf(Color(0x4D00F0FF), Color(0x33A855F7))), CircleShape)
+                            .border(1.2.dp, CyberCyan, CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -507,8 +529,10 @@ fun HomeVoiceScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
-                                    .background(CyberCyan.copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 5.dp, vertical = 2.dp)
+                                    .shadow(4.dp, RoundedCornerShape(6.dp), spotColor = CyberCyan)
+                                    .background(CyberCyan.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                    .border(0.8.dp, CyberCyan.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(text = "NEW", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = CyberCyan)
                             }
@@ -526,27 +550,29 @@ fun HomeVoiceScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Self-Healing AI Watchdog Tile
-            Card(
+            // Self-Healing AI Watchdog Tile - 3D Liquid Glass
+            LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onOpenHealing() }
-                    .border(1.dp, Color(0xFF00E5FF).copy(alpha = 0.35f), RoundedCornerShape(12.dp))
                     .testTag("home_self_healing_tile"),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = 6.dp,
+                borderBrush = Brush.linearGradient(listOf(Color(0x8000E5FF), Color(0x4000E676))),
+                surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush,
+                onClick = { onOpenHealing() }
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .background(Color(0xFF00E5FF).copy(alpha = 0.15f), CircleShape)
-                            .border(1.dp, Color(0xFF00E5FF), CircleShape),
+                            .size(38.dp)
+                            .shadow(8.dp, CircleShape, spotColor = Color(0xFF00E5FF))
+                            .background(Brush.linearGradient(listOf(Color(0x4D00E5FF), Color(0x3300E676))), CircleShape)
+                            .border(1.2.dp, Color(0xFF00E5FF), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -568,9 +594,11 @@ fun HomeVoiceScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
-                                    .background(Color(0xFF00E676).copy(alpha = 0.2f), RoundedCornerShape(4.dp))
-                                    .padding(horizontal = 5.dp, vertical = 2.dp)
-                                ) {
+                                    .shadow(4.dp, RoundedCornerShape(6.dp), spotColor = Color(0xFF00E676))
+                                    .background(Color(0xFF00E676).copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                    .border(0.8.dp, Color(0xFF00E676).copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
                                 Text(text = "ACTIVE", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF00E676))
                             }
                         }
@@ -692,15 +720,16 @@ fun HomeVoiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 3D VIRTUAL SPECIALIST HERO CARD
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = Color(0xFF0B172E),
-            border = androidx.compose.foundation.BorderStroke(1.dp, CyberCyan.copy(alpha = 0.6f)),
+        // 3D VIRTUAL SPECIALIST HERO CARD - 3D Liquid Glass
+        LiquidGlassCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { onOpenAvatar3D() }
-                .testTag("open_3d_avatar_card")
+                .testTag("open_3d_avatar_card"),
+            shape = RoundedCornerShape(18.dp),
+            elevation = 8.dp,
+            borderBrush = LiquidGlassTokens.GlassRimBrush,
+            surfaceBrush = LiquidGlassTokens.GlassElevatedBrush,
+            onClick = { onOpenAvatar3D() }
         ) {
             Row(
                 modifier = Modifier.padding(14.dp),
@@ -721,7 +750,7 @@ fun HomeVoiceScreen(
                         audioLevel = audioLevel,
                         mode = AvatarViewMode.PIP_BUBBLE,
                         showStatusBadge = false,
-                        modifier = Modifier.size(46.dp),
+                        modifier = Modifier.size(48.dp),
                         onClick = onOpenAvatar3D
                     )
                     Spacer(modifier = Modifier.width(12.dp))
@@ -734,16 +763,18 @@ fun HomeVoiceScreen(
                                 color = CyberCyan
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = EmeraldReady.copy(alpha = 0.2f)
+                            Box(
+                                modifier = Modifier
+                                    .shadow(4.dp, RoundedCornerShape(4.dp), spotColor = EmeraldReady)
+                                    .background(EmeraldReady.copy(alpha = 0.25f), RoundedCornerShape(4.dp))
+                                    .border(0.8.dp, EmeraldReady.copy(alpha = 0.7f), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text(
                                     text = "60 FPS PBR",
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = EmeraldReady,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    color = EmeraldReady
                                 )
                             }
                         }
@@ -767,14 +798,15 @@ fun HomeVoiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 5. LIVE ASSISTANT RESPONSE CARD
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = ObsidianSurface,
-            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+        // 5. LIVE ASSISTANT RESPONSE CARD - 3D Liquid Glass
+        LiquidGlassCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("live_response_card")
+                .testTag("live_response_card"),
+            shape = RoundedCornerShape(18.dp),
+            elevation = 8.dp,
+            borderBrush = LiquidGlassTokens.GlassRimBrush,
+            surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Row(
@@ -785,14 +817,24 @@ fun HomeVoiceScreen(
                     Text(
                         text = liveRouteBadge,
                         style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
                         color = CyberCyan
                     )
                     if (lastLatencyMs > 0L) {
-                        Text(
-                            text = "${lastLatencyMs}ms",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = EmeraldReady
-                        )
+                        Box(
+                            modifier = Modifier
+                                .shadow(2.dp, RoundedCornerShape(6.dp), spotColor = EmeraldReady)
+                                .background(EmeraldReady.copy(alpha = 0.20f), RoundedCornerShape(6.dp))
+                                .border(0.8.dp, EmeraldReady.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "${lastLatencyMs}ms",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = EmeraldReady
+                            )
+                        }
                     }
                 }
 
@@ -825,6 +867,7 @@ fun HomeVoiceScreen(
                     Text(
                         text = "Open full chat →",
                         style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = CyberCyan,
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
@@ -860,12 +903,14 @@ fun HomeVoiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 6. INSTANT COMMAND CHIPS
+        // 6. INSTANT COMMAND CHIPS - 3D Liquid Glass Pills
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = "INSTANT VOICE & PHONE ACTIONS",
                 style = MaterialTheme.typography.labelMedium,
-                color = TextMuted
+                fontWeight = FontWeight.Bold,
+                color = TextMuted,
+                letterSpacing = 0.8.sp
             )
             Spacer(modifier = Modifier.height(6.dp))
             FlowRow(
@@ -873,28 +918,18 @@ fun HomeVoiceScreen(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 quickLocalCommands.forEach { cmd ->
-                    Surface(
-                        shape = RoundedCornerShape(50),
-                        color = ObsidianSurfaceElevated,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .clickable { onSubmitCommand(cmd) }
-                    ) {
-                        Text(
-                            text = cmd,
-                            fontSize = 12.sp,
-                            color = TextSecondary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                        )
-                    }
+                    LiquidGlassPill(
+                        text = cmd,
+                        leadingDotColor = CyberCyan,
+                        onClick = { onSubmitCommand(cmd) }
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 7. INPUT BAR
+        // 7. INPUT BAR - 3D Liquid Glass Dock
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -908,7 +943,7 @@ fun HomeVoiceScreen(
                     .testTag("home_command_input_field"),
                 placeholder = {
                     Text(
-                        text = "Type or tap mic for JARVIS...",
+                        text = "Type or tap mic for Hasseena A1...",
                         color = TextMuted,
                         fontSize = 13.sp
                     )
@@ -925,33 +960,37 @@ fun HomeVoiceScreen(
                         }
                     }
                 ),
-                shape = RoundedCornerShape(50),
+                shape = RoundedCornerShape(26.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = ObsidianSurface,
-                    unfocusedContainerColor = ObsidianSurface,
+                    focusedContainerColor = Color(0x800F1B33),
+                    unfocusedContainerColor = Color(0x660B1220),
                     focusedBorderColor = CyberCyan,
-                    unfocusedBorderColor = BorderSubtle,
+                    unfocusedBorderColor = LiquidGlassTokens.GlassSubtleBorderBrush.let { BorderSubtle },
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary
                 )
             )
 
+            // Mic Button - 3D Glass Floating Button
             IconButton(
                 onClick = onTapOrb,
                 modifier = Modifier
                     .size(46.dp)
+                    .shadow(10.dp, CircleShape, spotColor = CyberCyan)
                     .clip(CircleShape)
-                    .background(CyberCyan)
+                    .background(Brush.linearGradient(listOf(CyberCyan, CyberCyanDim)))
+                    .border(1.2.dp, Color(0x80FFFFFF), CircleShape)
                     .testTag("home_mic_button")
             ) {
                 Icon(
                     imageVector = Icons.Default.Mic,
                     contentDescription = "Speak voice command",
-                    tint = Color.Black,
+                    tint = Color(0xFF030712),
                     modifier = Modifier.size(22.dp)
                 )
             }
 
+            // Send Button - 3D Glass Floating Button
             IconButton(
                 onClick = {
                     val trimmed = commandText.trim()
@@ -962,9 +1001,10 @@ fun HomeVoiceScreen(
                 },
                 modifier = Modifier
                     .size(46.dp)
+                    .shadow(8.dp, CircleShape, spotColor = QuantumViolet)
                     .clip(CircleShape)
-                    .background(ObsidianSurfaceElevated)
-                    .border(1.dp, BorderSubtle, CircleShape)
+                    .background(Brush.linearGradient(listOf(Color(0x66162545), Color(0x99111C35))))
+                    .border(1.2.dp, LiquidGlassTokens.GlassSubtleBorderBrush, CircleShape)
                     .testTag("home_send_button")
             ) {
                 Icon(
@@ -989,13 +1029,17 @@ private fun StatusGaugeItem(
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier
+                .size(44.dp)
+                .shadow(6.dp, CircleShape, spotColor = color.copy(alpha = 0.5f))
+                .background(Color(0x33090F1C), CircleShape)
+                .border(0.8.dp, color.copy(alpha = 0.3f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
+            Canvas(modifier = Modifier.fillMaxSize().padding(3.dp)) {
                 val strokeWidth = 3.5.dp.toPx()
                 drawCircle(
-                    color = color.copy(alpha = 0.2f),
+                    color = color.copy(alpha = 0.15f),
                     style = Stroke(width = strokeWidth)
                 )
                 drawArc(
@@ -1030,12 +1074,13 @@ private fun QuickActionTile(
     tint: Color,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = modifier
-            .clickable { onClick() }
-            .border(1.dp, tint.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
-        colors = CardDefaults.cardColors(containerColor = ObsidianSurface),
-        shape = RoundedCornerShape(12.dp)
+    LiquidGlassCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        elevation = 4.dp,
+        borderBrush = Brush.linearGradient(listOf(tint.copy(alpha = 0.5f), Color(0x22FFFFFF))),
+        surfaceBrush = LiquidGlassTokens.GlassSurfaceBrush,
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
@@ -1045,14 +1090,15 @@ private fun QuickActionTile(
         ) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .background(tint.copy(alpha = 0.12f), CircleShape)
-                    .border(1.dp, tint.copy(alpha = 0.3f), CircleShape),
+                    .size(36.dp)
+                    .shadow(6.dp, CircleShape, spotColor = tint)
+                    .background(tint.copy(alpha = 0.18f), CircleShape)
+                    .border(1.dp, tint.copy(alpha = 0.5f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = title,
                 fontSize = 11.sp,

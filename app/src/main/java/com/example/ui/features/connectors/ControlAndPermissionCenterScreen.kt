@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -79,12 +80,15 @@ import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
 import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 import kotlin.math.roundToInt
 
 @Composable
@@ -171,16 +175,14 @@ fun ControlAndPermissionCenterScreen(
             )
             tabs.forEach { (idx, title, icon) ->
                 val selected = activeSection == idx
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (selected) CyberCyan.copy(alpha = 0.2f) else ObsidianSurfaceElevated,
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (selected) CyberCyan else BorderSubtle
-                    ),
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
+                        .liquidGlass(
+                            cornerRadius = 14.dp,
+                            accentGlow = if (selected) CyberCyan else Color.Transparent,
+                            borderAlpha = if (selected) 0.6f else 0.18f
+                        )
                         .clickable {
                             activeSection = idx
                             onRefreshStatus()
@@ -225,11 +227,10 @@ fun ControlAndPermissionCenterScreen(
                 ) {
                     // Telemetry overview
                     item {
-                        Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = ObsidianSurface,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                            modifier = Modifier.fillMaxWidth()
+                        LiquidGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            accentColor = CyberCyan,
+                            cornerRadius = 18.dp
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(

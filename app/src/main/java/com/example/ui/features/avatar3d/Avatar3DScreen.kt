@@ -71,12 +71,17 @@ import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassPill
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
+import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -403,13 +408,15 @@ fun Avatar3DScreen(
             }
 
             // 3. Bottom Interactive Interaction Bar
-            Surface(
-                color = Color(0xE6081020),
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .liquidGlass(
+                        cornerRadius = 24.dp,
+                        accentGlow = CyberCyan,
+                        borderAlpha = 0.35f
+                    )
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     // Task Action Pills

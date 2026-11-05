@@ -90,6 +90,8 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
@@ -99,6 +101,7 @@ import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -239,7 +242,7 @@ fun CodingScreen(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "JARVIS",
+                    text = "HASSEENA A1",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = CyberCyan,
@@ -254,17 +257,17 @@ fun CodingScreen(
             }
 
             // 3D Avatar Workstation Shortcut Badge
-            Surface(
-                onClick = { viewModel?.navigateTo(HasseenaDestination.AVATAR_3D) },
-                shape = RoundedCornerShape(20.dp),
-                color = ObsidianSurfaceElevated,
-                border = androidx.compose.foundation.BorderStroke(1.dp, CyberCyan.copy(alpha = 0.4f)),
-                modifier = Modifier.height(34.dp)
+            Box(
+                modifier = Modifier
+                    .liquidGlass(
+                        cornerRadius = 20.dp,
+                        accentGlow = CyberCyan,
+                        borderAlpha = 0.4f
+                    )
+                    .clickable { viewModel?.navigateTo(HasseenaDestination.AVATAR_3D) }
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.SmartToy,
                         contentDescription = "Avatar 3D",
@@ -285,8 +288,11 @@ fun CodingScreen(
                 },
                 modifier = Modifier
                     .size(36.dp)
-                    .background(ObsidianSurfaceElevated, RoundedCornerShape(8.dp))
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(8.dp))
+                    .liquidGlass(
+                        cornerRadius = 8.dp,
+                        accentGlow = CyberCyan,
+                        borderAlpha = 0.25f
+                    )
                     .testTag("copy_code_button")
             ) {
                 Icon(
@@ -303,7 +309,7 @@ fun CodingScreen(
         // Mode Navigation Tabs
         ScrollableTabRow(
             selectedTabIndex = activeTab,
-            containerColor = ObsidianSurface,
+            containerColor = Color.Transparent,
             contentColor = CyberCyan,
             edgePadding = 0.dp,
             indicator = { tabPositions ->
@@ -314,7 +320,11 @@ fun CodingScreen(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .liquidGlass(
+                    cornerRadius = 12.dp,
+                    accentGlow = CyberCyan,
+                    borderAlpha = 0.3f
+                )
                 .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
         ) {
             Tab(

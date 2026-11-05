@@ -59,6 +59,8 @@ import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +71,7 @@ import com.example.ui.theme.AmberThinking
 import com.example.ui.theme.BorderSubtle
 import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
+import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
@@ -76,6 +79,10 @@ import com.example.ui.theme.QuantumViolet
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.LiquidGlassTokens
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassButton
+import com.example.ui.theme.liquidGlass
 
 @Composable
 fun ChatStreamScreen(
@@ -288,7 +295,7 @@ fun ChatStreamScreen(
             }
         }
 
-        // Bottom input row
+        // Bottom input row - 3D Liquid Glass Dock
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -300,14 +307,14 @@ fun ChatStreamScreen(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = {
-                    Text("Message JARVIS...", color = TextMuted)
+                    Text("Message Hasseena A1...", color = TextMuted)
                 },
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(26.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = CyberCyan,
-                    unfocusedBorderColor = BorderSubtle,
-                    focusedContainerColor = ObsidianSurface,
-                    unfocusedContainerColor = ObsidianSurface,
+                    unfocusedBorderColor = LiquidGlassTokens.GlassSubtleBorderBrush.let { BorderSubtle },
+                    focusedContainerColor = Color(0x800F1B33),
+                    unfocusedContainerColor = Color(0x660B1220),
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary
                 ),
@@ -325,13 +332,15 @@ fun ChatStreamScreen(
                     .testTag("chat_prompt_input")
             )
 
+            // Voice Mic Button - 3D Glass
             IconButton(
                 onClick = onVoiceMicTap,
                 modifier = Modifier
                     .size(48.dp)
+                    .shadow(8.dp, CircleShape, spotColor = CyberCyan)
                     .clip(CircleShape)
-                    .background(ObsidianSurfaceElevated)
-                    .border(1.dp, BorderSubtle, CircleShape)
+                    .background(Brush.linearGradient(listOf(Color(0x66162545), Color(0x99111C35))))
+                    .border(1.2.dp, LiquidGlassTokens.GlassSubtleBorderBrush, CircleShape)
             ) {
                 Icon(
                     imageVector = Icons.Default.Mic,
@@ -340,6 +349,7 @@ fun ChatStreamScreen(
                 )
             }
 
+            // Send Button - 3D Glass
             IconButton(
                 onClick = {
                     if (inputText.isNotBlank()) {
@@ -349,14 +359,16 @@ fun ChatStreamScreen(
                 },
                 modifier = Modifier
                     .size(48.dp)
+                    .shadow(10.dp, CircleShape, spotColor = CyberCyan)
                     .clip(CircleShape)
-                    .background(CyberCyan)
+                    .background(Brush.linearGradient(listOf(CyberCyan, CyberCyanDim)))
+                    .border(1.2.dp, Color(0x80FFFFFF), CircleShape)
                     .testTag("chat_send_button")
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,
                     contentDescription = "Send prompt",
-                    tint = Color.Black
+                    tint = Color(0xFF030712)
                 )
             }
         }
@@ -372,32 +384,48 @@ private fun ChatMessageCard(
     onRetry: () -> Unit
 ) {
     val isUser = message.role == "user"
-    val containerColor = when {
-        message.isError -> CoralAlert.copy(alpha = 0.12f)
-        isUser -> QuantumViolet.copy(alpha = 0.22f)
-        else -> ObsidianSurface
+    val bubbleShape = RoundedCornerShape(
+        topStart = 20.dp,
+        topEnd = 20.dp,
+        bottomStart = if (isUser) 20.dp else 4.dp,
+        bottomEnd = if (isUser) 4.dp else 20.dp
+    )
+
+    val surfaceBrush = when {
+        message.isError -> androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(Color(0x40EF4444), Color(0x257F1D1D))
+        )
+        isUser -> androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(Color(0x554F46E5), Color(0x358B5CF6))
+        )
+        else -> LiquidGlassTokens.GlassSurfaceBrush
     }
-    val borderColor = when {
-        message.isError -> CoralAlert.copy(alpha = 0.6f)
-        isUser -> QuantumViolet.copy(alpha = 0.5f)
-        message.isStreaming -> CyberCyan
-        else -> BorderSubtle
+
+    val borderBrush = when {
+        message.isError -> androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(CoralAlert, Color(0x40EF4444))
+        )
+        isUser -> androidx.compose.ui.graphics.Brush.linearGradient(
+            listOf(Color(0x80C084FC), Color(0x4038BDF8))
+        )
+        message.isStreaming -> LiquidGlassTokens.GlassRimBrush
+        else -> LiquidGlassTokens.GlassSubtleBorderBrush
     }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
-        Surface(
-            shape = RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomStart = if (isUser) 18.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 18.dp
-            ),
-            color = containerColor,
-            border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
-            modifier = Modifier.fillMaxWidth(if (isUser) 0.86f else 0.96f)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(if (isUser) 0.86f else 0.96f)
+                .liquidGlass(
+                    shape = bubbleShape,
+                    elevation = if (isUser) 6.dp else 8.dp,
+                    borderBrush = borderBrush,
+                    surfaceBrush = surfaceBrush,
+                    spotGlowColor = if (isUser) QuantumViolet.copy(alpha = 0.35f) else CyberCyan.copy(alpha = 0.35f)
+                )
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 // Route & Latency header
@@ -414,11 +442,19 @@ private fun ChatMessageCard(
                     )
 
                     if (!isUser && message.latencyMs > 0L) {
-                        Text(
-                            text = "${message.latencyMs}ms",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = EmeraldReady
-                        )
+                        Box(
+                            modifier = Modifier
+                                .shadow(2.dp, RoundedCornerShape(4.dp), spotColor = EmeraldReady)
+                                .background(EmeraldReady.copy(alpha = 0.20f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 5.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "${message.latencyMs}ms",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = EmeraldReady
+                            )
+                        }
                     }
                 }
 
@@ -432,15 +468,24 @@ private fun ChatMessageCard(
 
                 if (!message.citationsSummary.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = ObsidianSurfaceElevated,
-                        modifier = Modifier.fillMaxWidth()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .liquidGlass(
+                                shape = RoundedCornerShape(10.dp),
+                                elevation = 2.dp,
+                                borderBrush = LiquidGlassTokens.GlassSubtleBorderBrush,
+                                surfaceBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                                    listOf(Color(0x33162545), Color(0x220B1325))
+                                )
+                            )
+                            .padding(10.dp)
                     ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
+                        Column {
                             Text(
                                 text = "VERIFIED SOURCES",
                                 style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
                                 color = CyberCyan
                             )
                             Spacer(modifier = Modifier.height(4.dp))

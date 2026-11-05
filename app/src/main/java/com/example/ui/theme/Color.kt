@@ -2,24 +2,42 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val ObsidianBackground = Color(0xFF080609)
-val ObsidianSurface = Color(0xFF10090D)
-val ObsidianSurfaceElevated = Color(0xFF1A0D13)
-val ObsidianSurfaceGlass = Color(0xFF241018)
+// 3D Liquid Glass Core Palette — Deep space, electric blue, purple/violet, white translucent glass
+val ObsidianBackground = Color(0xFF030712)
+val ObsidianSurface = Color(0x730B1220)
+val ObsidianSurfaceElevated = Color(0x99111C35)
+val ObsidianSurfaceGlass = Color(0xB3182645)
 
-val CyberCyan = Color(0xFFFF2448)
-val CyberCyanDim = Color(0xFFB80F2E)
-val QuantumViolet = Color(0xFFFF4967)
-val QuantumVioletLight = Color(0xFFFF9AAA)
-val ElectricBlue = Color(0xFF8A1538)
+// Electric Blue & Cyber Lighting
+val CyberCyan = Color(0xFF00F0FF)
+val CyberCyanDim = Color(0xFF0284C7)
+val ElectricBlue = Color(0xFF38BDF8)
+val NeonIce = Color(0xFF7DD3FC)
 
-val EmeraldReady = Color(0xFF00E676)
-val AmberThinking = Color(0xFFFFD740)
-val CoralAlert = Color(0xFFFF5252)
-val SolarGold = Color(0xFFFFAB00)
-val CrimsonNova = Color(0xFFFF1744)
+// Purple & Violet Gradient Accents
+val QuantumViolet = Color(0xFFA855F7)
+val QuantumVioletLight = Color(0xFFC084FC)
+val VioletNeon = Color(0xFF8B5CF6)
+val IndigoDepth = Color(0xFF4F46E5)
 
-val TextPrimary = Color(0xFFF4F7FF)
-val TextSecondary = Color(0xFFA6B4D0)
-val TextMuted = Color(0xFF687796)
-val BorderSubtle = Color(0xFF4A1724)
+// Status & Indicators
+val EmeraldReady = Color(0xFF10B981)
+val AmberThinking = Color(0xFFF59E0B)
+val CoralAlert = Color(0xFFEF4444)
+val SolarGold = Color(0xFFFBBF24)
+val CrimsonNova = Color(0xFFF43F5E)
+
+// Liquid Glass Translucency & Specular Highlights
+val GlassSpecularWhite = Color(0x4DFFFFFF)
+val GlassSpecularDim = Color(0x14FFFFFF)
+val GlassSurfaceDark = Color(0x59080F1E)
+val GlassSurfaceMedium = Color(0x800F1B33)
+val GlassBorderCyan = Color(0x6638BDF8)
+val GlassBorderViolet = Color(0x55A855F7)
+val GlassBorderSubtle = Color(0x3338BDF8)
+
+// Typography
+val TextPrimary = Color(0xFFF8FAFC)
+val TextSecondary = Color(0xFF94A3B8)
+val TextMuted = Color(0xFF64748B)
+val BorderSubtle = Color(0x4038BDF8)

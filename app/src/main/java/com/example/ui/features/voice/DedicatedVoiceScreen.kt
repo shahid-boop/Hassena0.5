@@ -67,6 +67,8 @@ import com.example.ui.theme.CoralAlert
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.CyberCyanDim
 import com.example.ui.theme.EmeraldReady
+import com.example.ui.theme.LiquidGlassCard
+import com.example.ui.theme.LiquidGlassTokens
 import com.example.ui.theme.ObsidianBackground
 import com.example.ui.theme.ObsidianSurface
 import com.example.ui.theme.ObsidianSurfaceElevated
@@ -76,6 +78,7 @@ import com.example.ui.theme.SolarGold
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
+import com.example.ui.theme.liquidGlass
 import com.example.ui.widgets.orb.HasseenaOrb
 import kotlin.math.sin
 
@@ -275,8 +278,8 @@ fun DedicatedVoiceScreen(
                         Brush.radialGradient(
                             listOf(
                                 CyberCyan,
-                                CyberCyanDim,
-                                Color(0xFF4A000E)
+                                QuantumViolet,
+                                Color(0xFF0F172A)
                             )
                         )
                     )
@@ -305,7 +308,7 @@ fun DedicatedVoiceScreen(
             else -> "Ready"
         }
         val statusSubtitle = when (orbState) {
-            OrbState.LISTENING -> "Speak now or say \"Hey JARVIS\""
+            OrbState.LISTENING -> "Speak now or say \"Hey Hasseena\""
             OrbState.THINKING -> "Routing intelligence..."
             OrbState.SPEAKING -> "Tap microphone or speak to interrupt"
             OrbState.EXECUTING -> "Applying system changes..."
@@ -365,13 +368,12 @@ fun DedicatedVoiceScreen(
 
         // Live transcript or spoken headline
         if (partialTranscript.isNotBlank() || liveHeadline.isNotBlank()) {
-            Card(
+            LiquidGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp)),
-                colors = CardDefaults.cardColors(containerColor = ObsidianSurfaceElevated),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(horizontal = 12.dp),
+                accentColor = CyberCyan,
+                cornerRadius = 14.dp
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
                     if (partialTranscript.isNotBlank()) {
