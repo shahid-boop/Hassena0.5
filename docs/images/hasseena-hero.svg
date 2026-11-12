@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="340" viewBox="0 0 1200 340" role="img" aria-labelledby="t d">
+<title id="t">Hasseena A1 - autonomous AI assistant for Android</title><desc id="d">Dark navy banner with a glowing cyan orb interface, a phone silhouette and the Hasseena A1 title.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07101f"/><stop offset="1" stop-color="#132b4b"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#37c7ff" stop-opacity=".30"/><stop offset="1" stop-color="#37c7ff" stop-opacity="0"/></radialGradient>
+<linearGradient id="phone" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0e1b30"/><stop offset="1" stop-color="#0a1322"/></linearGradient>
+</defs>
+<rect width="1200" height="340" rx="24" fill="url(#bg)"/>
+<circle cx="940" cy="170" r="210" fill="url(#glow)"/>
+<g fill="none" stroke="#49caff" stroke-opacity=".75">
+<circle cx="940" cy="170" r="112" stroke-width="2"/><circle cx="940" cy="170" r="86" stroke-width="1.5" stroke-dasharray="9 9"/>
+<circle cx="940" cy="170" r="58" stroke-width="3"/><path d="M940 34v36M940 270v36M804 170h36M1040 170h36M844 74l26 26M1010 240l26 26M1036 74l-26 26M870 240l-26 26"/>
+</g>
+<circle cx="940" cy="170" r="20" fill="#65d8ff"/><circle cx="940" cy="170" r="36" fill="none" stroke="#65d8ff" stroke-opacity=".35" stroke-width="10"/>
+<rect x="700" y="96" width="96" height="176" rx="16" fill="url(#phone)" stroke="#2f5f86" stroke-width="2"/>
+<rect x="710" y="112" width="76" height="120" rx="8" fill="#0a1626"/>
+<rect x="718" y="124" width="52" height="12" rx="6" fill="#1c3a58"/>
+<rect x="718" y="144" width="40" height="12" rx="6" fill="#49caff" fill-opacity=".85"/>
+<rect x="734" y="164" width="44" height="12" rx="6" fill="#1c3a58"/>
+<rect x="718" y="184" width="36" height="12" rx="6" fill="#1c3a58"/>
+<circle cx="748" cy="252" r="9" fill="#65d8ff"/>
+<text x="72" y="128" fill="#61d7ff" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700" letter-spacing="7">AUTONOMOUS AI ASSISTANT FOR ANDROID</text>
+<text x="66" y="205" fill="#f0f7ff" font-family="Segoe UI,Arial,sans-serif" font-size="66" font-weight="800" letter-spacing="2">HASSEENA A1</text>
+<text x="72" y="250" fill="#9fb8d5" font-family="Segoe UI,Arial,sans-serif" font-size="21">Chat &#183; Voice &#183; Missions &#183; Self-Healing &#183; Device Control</text>
+<path d="M72 279h330" stroke="#42caff" stroke-width="3" stroke-linecap="round"/>
+<text x="72" y="311" fill="#7c98b9" font-family="Segoe UI,Arial,sans-serif" font-size="14" letter-spacing="2">KOTLIN &#183; JETPACK COMPOSE &#183; MIN SDK 24</text>
+</svg>

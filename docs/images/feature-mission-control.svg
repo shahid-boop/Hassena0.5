@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="t d">
+<title id="t">Mission Control - six-in-one autonomous agent</title><desc id="d">A dark phone showing ordered mission steps with status chips and a tool palette for code, web and phone actions.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080d18"/><stop offset="1" stop-color="#142744"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#37c7ff" stop-opacity=".22"/><stop offset="1" stop-color="#37c7ff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="700" rx="20" fill="url(#bg)"/>
+<text x="52" y="74" fill="#eff7ff" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">Mission Control &#8212; six-in-one agent</text>
+<text x="52" y="112" fill="#8fb6d9" font-family="Segoe UI,Arial,sans-serif" font-size="20">Goal &#8594; plan &#8594; tool calls &#8594; reviewed result, every step visible</text>
+<rect x="52" y="150" width="500" height="510" rx="26" fill="#0b1526" stroke="#2f5f86" stroke-width="2"/>
+<rect x="72" y="176" width="460" height="458" rx="16" fill="#0a1424"/>
+<text x="96" y="216" fill="#eaf6ff" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="700">Mission: ship release notes</text>
+<rect x="96" y="234" width="412" height="10" rx="5" fill="#13233c"/>
+<rect x="96" y="234" width="330" height="10" rx="5" fill="#49caff"/>
+<path d="M126 292v250" stroke="#27456a" stroke-width="3"/>
+<g font-family="Segoe UI,Arial,sans-serif" font-size="16">
+<circle cx="126" cy="292" r="14" fill="#0f3b5c" stroke="#49caff" stroke-width="2"/><path d="M120 292l4 4 8-9" stroke="#7fd4ff" stroke-width="2.5" fill="none"/>
+<rect x="156" y="274" width="330" height="38" rx="10" fill="#13233c"/><text x="174" y="299" fill="#cfe6f8">Plan steps</text>
+<circle cx="126" cy="356" r="14" fill="#0f3b5c" stroke="#49caff" stroke-width="2"/><path d="M120 356l4 4 8-9" stroke="#7fd4ff" stroke-width="2.5" fill="none"/>
+<rect x="156" y="338" width="330" height="38" rx="10" fill="#13233c"/><text x="174" y="363" fill="#cfe6f8">Read &amp; edit project files</text>
+<circle cx="126" cy="420" r="14" fill="#0f3b5c" stroke="#62d58a" stroke-width="2.5"/>
+<circle cx="126" cy="420" r="6" fill="#62d58a"/>
+<rect x="156" y="402" width="330" height="38" rx="10" fill="#0f3b5c" stroke="#2c6a4a"/><text x="174" y="427" fill="#9ff0c4">Web research &#183; running</text>
+<circle cx="126" cy="484" r="14" fill="#0b1526" stroke="#3d5f85" stroke-width="2"/>
+<rect x="156" y="466" width="330" height="38" rx="10" fill="#0e1a2e"/><text x="174" y="491" fill="#7f9cbd">Device action (approval)</text>
+<circle cx="126" cy="548" r="14" fill="#0b1526" stroke="#3d5f85" stroke-width="2"/>
+<rect x="156" y="530" width="330" height="38" rx="10" fill="#0e1a2e"/><text x="174" y="555" fill="#7f9cbd">Code review + QA gates</text>
+</g>
+<rect x="96" y="592" width="180" height="30" rx="15" fill="#0f3b5c" stroke="#49caff"/><text x="118" y="613" fill="#7fd4ff" font-family="Segoe UI,Arial,sans-serif" font-size="15" font-weight="700">RUNNING</text>
+<text x="300" y="613" fill="#7f9cbd" font-family="Segoe UI,Arial,sans-serif" font-size="15">step 3 of 5</text>
+<circle cx="900" cy="360" r="230" fill="url(#halo)"/>
+<g font-family="Segoe UI,Arial,sans-serif">
+<g transform="translate(660,180)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><text x="24" y="42" fill="#7fd4ff" font-size="30" font-weight="800">&lt;/&gt;</text><text x="96" y="40" fill="#eaf6ff" font-size="19" font-weight="700">Coding</text><text x="96" y="68" fill="#7f9cbd" font-size="15">checkpoints &#183; rollback</text></g>
+<g transform="translate(930,180)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><circle cx="46" cy="48" r="20" fill="none" stroke="#7fd4ff" stroke-width="3"/><path d="M26 48h40M46 28c10 12 10 28 0 40M46 28c-10 12-10 28 0 40" stroke="#7fd4ff" stroke-width="2" fill="none"/><text x="86" y="42" fill="#eaf6ff" font-size="19" font-weight="700">Web</text><text x="86" y="68" fill="#7f9cbd" font-size="15">search &#183; deep research</text></g>
+<g transform="translate(660,310)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><rect x="26" y="26" width="40" height="44" rx="8" fill="none" stroke="#7fd4ff" stroke-width="3"/><circle cx="46" cy="62" r="3" fill="#7fd4ff"/><text x="86" y="42" fill="#eaf6ff" font-size="19" font-weight="700">Phone</text><text x="86" y="68" fill="#7f9cbd" font-size="15">flashlight &#183; apps &#183; SMS</text></g>
+<g transform="translate(930,310)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><path d="M30 66c8-26 24-38 44-42M74 24l-4 14M74 24l-14 2" stroke="#7fd4ff" stroke-width="3" fill="none" stroke-linecap="round"/><text x="96" y="42" fill="#eaf6ff" font-size="19" font-weight="700">Brain</text><text x="96" y="68" fill="#7f9cbd" font-size="15">8 providers &#183; routing</text></g>
+<g transform="translate(660,440)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><rect x="26" y="30" width="44" height="36" rx="6" fill="none" stroke="#7fd4ff" stroke-width="3"/><path d="M34 42h28M34 52h20" stroke="#7fd4ff" stroke-width="3"/><text x="90" y="42" fill="#eaf6ff" font-size="19" font-weight="700">Build</text><text x="90" y="68" fill="#7f9cbd" font-size="15">checks &#183; compiler logs</text></g>
+<g transform="translate(930,440)"><rect width="240" height="96" rx="16" fill="#0e1c31" stroke="#2f5f86"/><ellipse cx="50" cy="34" rx="24" ry="9" fill="none" stroke="#7fd4ff" stroke-width="3"/><path d="M26 34v30c0 5 11 9 24 9s24-4 24-9V34" fill="none" stroke="#7fd4ff" stroke-width="3"/><text x="92" y="42" fill="#eaf6ff" font-size="19" font-weight="700">Memory</text><text x="92" y="68" fill="#7f9cbd" font-size="15">queue &#183; knowledge</text></g>
+</g>
+<text x="660" y="620" fill="#8fb6d9" font-family="Segoe UI,Arial,sans-serif" font-size="19">pause &#183; resume &#183; approve &#183; cancel &#8212; states tracked end to end</text>
+</svg>

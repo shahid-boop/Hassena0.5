@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="t d">
+<title id="t">LiquidGlass design system</title><desc id="d">Layered translucent frosted glass panels with cyan light refractions over a deep navy gradient.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#07101f"/><stop offset=".55" stop-color="#0d1e38"/><stop offset="1" stop-color="#132b4b"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#9fd8ff" stop-opacity=".18"/><stop offset="1" stop-color="#9fd8ff" stop-opacity=".05"/></linearGradient>
+<linearGradient id="glass2" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#65d8ff" stop-opacity=".22"/><stop offset="1" stop-color="#8b6bff" stop-opacity=".08"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#37c7ff" stop-opacity=".28"/><stop offset="1" stop-color="#37c7ff" stop-opacity="0"/></radialGradient>
+<radialGradient id="orb"><stop stop-color="#dff6ff"/><stop offset=".4" stop-color="#65d8ff"/><stop offset="1" stop-color="#1f7fbf"/></radialGradient>
+</defs>
+<rect width="1200" height="700" rx="20" fill="url(#bg)"/>
+<circle cx="880" cy="330" r="260" fill="url(#halo)"/>
+<g opacity=".9">
+<rect x="560" y="130" width="480" height="300" rx="28" fill="url(#glass)" stroke="#bfe6ff" stroke-opacity=".35" stroke-width="2"/>
+<rect x="640" y="230" width="480" height="320" rx="28" fill="url(#glass2)" stroke="#bfe6ff" stroke-opacity=".45" stroke-width="2"/>
+<rect x="500" y="330" width="420" height="260" rx="28" fill="url(#glass)" stroke="#bfe6ff" stroke-opacity=".3" stroke-width="2"/>
+</g>
+<g fill="#dff6ff" fill-opacity=".75">
+<rect x="676" y="272" width="240" height="16" rx="8"/><rect x="676" y="304" width="180" height="12" rx="6" fill-opacity=".55"/><rect x="676" y="330" width="210" height="12" rx="6" fill-opacity=".55"/>
+<rect x="676" y="380" width="120" height="40" rx="20" fill="#65d8ff" fill-opacity=".85"/>
+<rect x="536" y="374" width="180" height="14" rx="7" fill-opacity=".6"/><rect x="536" y="404" width="130" height="14" rx="7" fill-opacity=".4"/>
+<rect x="596" y="172" width="200" height="14" rx="7" fill-opacity=".6"/><rect x="596" y="202" width="150" height="14" rx="7" fill-opacity=".4"/>
+</g>
+<circle cx="330" cy="300" r="96" fill="url(#orb)" opacity=".95"/>
+<circle cx="330" cy="300" r="128" fill="none" stroke="#65d8ff" stroke-opacity=".5" stroke-width="3" stroke-dasharray="12 12"/>
+<circle cx="304" cy="272" r="26" fill="#ffffff" fill-opacity=".55"/>
+<g stroke="#7fd4ff" stroke-width="5" stroke-linecap="round" opacity=".85">
+<path d="M180 520v-40M214 540v-80M248 560v-120M282 534v-68M316 566v-132M350 540v-80M384 560v-120M418 534v-68M452 556v-112"/>
+</g>
+<text x="60" y="110" fill="#eff7ff" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">LiquidGlass UI</text>
+<text x="60" y="148" fill="#8fb6d9" font-family="Segoe UI,Arial,sans-serif" font-size="20">Translucent layers, soft glow, smoother scrolling everywhere</text>
+<text x="60" y="640" fill="#7c98b9" font-family="Segoe UI,Arial,sans-serif" font-size="17" letter-spacing="2">FROSTED PANELS &#183; DEPTH &#183; GLOW ACCENTS &#183; CONSISTENT MOTION</text>
+</svg>

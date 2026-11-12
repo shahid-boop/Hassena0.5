@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="t d">
+<title id="t">Self-Healing AI workflow</title><desc id="d">A failing red error card flows through diagnosis into a green fixed card, with a code diff and checkpoint shield below.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080d18"/><stop offset="1" stop-color="#142744"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#37c7ff" stop-opacity=".20"/><stop offset="1" stop-color="#37c7ff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="700" rx="20" fill="url(#bg)"/>
+<text x="52" y="74" fill="#eff7ff" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">Self-Healing AI</text>
+<text x="52" y="112" fill="#8fb6d9" font-family="Segoe UI,Arial,sans-serif" font-size="20">Detect &#8594; sanitize &#8594; diagnose &#8594; approve &#8594; fix &#8594; verify &#8594; roll back if needed</text>
+<circle cx="600" cy="360" r="280" fill="url(#halo)"/>
+<g font-family="Segoe UI,Arial,sans-serif">
+<rect x="70" y="180" width="300" height="150" rx="18" fill="#2a1220" stroke="#ff6f70" stroke-width="2"/>
+<path d="M120 226l18 32h-36z" fill="#ff6f70"/><path d="M120 236v10M120 251v3" stroke="#2a1220" stroke-width="3" stroke-linecap="round"/>
+<text x="156" y="240" fill="#ffb3b3" font-size="21" font-weight="700">Build failed</text>
+<text x="98" y="286" fill="#e7a3a3" font-size="16">compiler error &#183; exit code 1</text>
+<rect x="98" y="300" width="244" height="10" rx="5" fill="#5c2430"/>
+<rect x="98" y="300" width="150" height="10" rx="5" fill="#ff6f70"/>
+<rect x="450" y="180" width="300" height="150" rx="18" fill="#0e1c31" stroke="#49caff" stroke-width="2"/>
+<circle cx="510" cy="240" r="26" fill="none" stroke="#7fd4ff" stroke-width="4"/><path d="M530 260l24 24" stroke="#7fd4ff" stroke-width="5" stroke-linecap="round"/>
+<text x="556" y="240" fill="#eaf6ff" font-size="21" font-weight="700">Diagnose</text>
+<text x="478" y="286" fill="#8fb6d9" font-size="16">root cause + proposed diff</text>
+<rect x="478" y="300" width="244" height="10" rx="5" fill="#13233c"/><rect x="478" y="300" width="190" height="10" rx="5" fill="#49caff"/>
+<rect x="830" y="180" width="300" height="150" rx="18" fill="#0f2a1e" stroke="#62d58a" stroke-width="2"/>
+<circle cx="890" cy="240" r="26" fill="#62d58a"/><path d="M878 240l9 9 17-19" stroke="#0f2a1e" stroke-width="4" fill="none" stroke-linecap="round"/>
+<text x="936" y="240" fill="#9ff0c4" font-size="21" font-weight="700">Verified</text>
+<text x="858" y="286" fill="#8fd6ae" font-size="16">tests pass &#183; mission recorded</text>
+<rect x="858" y="300" width="244" height="10" rx="5" fill="#174a33"/><rect x="858" y="300" width="244" height="10" rx="5" fill="#62d58a"/>
+<path d="M380 255h56M760 255h56" stroke="#7fd4ff" stroke-width="4" stroke-linecap="round"/><path d="M430 247l12 8-12 8M810 247l12 8-12 8" fill="#7fd4ff"/>
+<rect x="70" y="400" width="700" height="240" rx="18" fill="#0b1526" stroke="#2f5f86" stroke-width="2"/>
+<text x="98" y="442" fill="#eaf6ff" font-size="19" font-weight="700">Proposed repair &#8212; review before apply</text>
+<g font-family="Consolas,monospace" font-size="16">
+<rect x="98" y="464" width="644" height="26" rx="6" fill="#13233c"/><text x="112" y="483" fill="#7f9cbd">fun parse(input: String) {</text>
+<rect x="98" y="496" width="644" height="26" rx="6" fill="#2c1a1e"/><text x="112" y="515" fill="#ff9b9b">-  val data = json.parse(input)</text>
+<rect x="98" y="528" width="644" height="26" rx="6" fill="#12301f"/><text x="112" y="547" fill="#8fe8b4">+  val data = json.parse(input ?: "{}")</text>
+<rect x="98" y="560" width="644" height="26" rx="6" fill="#13233c"/><text x="112" y="579" fill="#7f9cbd">return data</text>
+</g>
+<rect x="98" y="600" width="150" height="30" rx="15" fill="#0f3b5c" stroke="#49caff"/><text x="122" y="621" fill="#7fd4ff" font-size="15" font-weight="700">CHECKPOINT</text>
+<rect x="266" y="600" width="130" height="30" rx="15" fill="#174a33" stroke="#62d58a"/><text x="292" y="621" fill="#9ff0c4" font-size="15" font-weight="700">APPLY</text>
+<rect x="414" y="600" width="130" height="30" rx="15" fill="#0e1c31" stroke="#3d5f85"/><text x="444" y="621" fill="#7f9cbd" font-size="15" font-weight="700">ROLLBACK</text>
+<path d="M840 470l64-24 64 24v56c0 44-30 74-64 88-34-14-64-44-64-88z" fill="#0e1c31" stroke="#49caff" stroke-width="3"/>
+<path d="M884 522l18 18 34-38" stroke="#62d58a" stroke-width="6" fill="none" stroke-linecap="round"/>
+<text x="810" y="640" fill="#8fb6d9" font-size="18">rollback available &#183; outcome recorded</text>
+</g>
+</svg>

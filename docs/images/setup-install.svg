@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-labelledby="t d">
+<title id="t">Install in minutes</title><desc id="d">A download cloud sends the APK into a phone showing an install prompt with a shield permission icon and an unknown-sources toggle.</desc>
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080d18"/><stop offset="1" stop-color="#142744"/></linearGradient>
+<radialGradient id="halo"><stop stop-color="#37c7ff" stop-opacity=".22"/><stop offset="1" stop-color="#37c7ff" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="700" rx="20" fill="url(#bg)"/>
+<text x="52" y="74" fill="#eff7ff" font-family="Segoe UI,Arial,sans-serif" font-size="34" font-weight="800">Install in minutes</text>
+<text x="52" y="112" fill="#8fb6d9" font-family="Segoe UI,Arial,sans-serif" font-size="20">Download the APK &#8594; allow unknown apps &#8594; install &#8594; add a provider key</text>
+<circle cx="600" cy="400" r="280" fill="url(#halo)"/>
+<g font-family="Segoe UI,Arial,sans-serif">
+<path d="M150 300a54 54 0 0 1 6-107 76 76 0 0 1 145-16 50 50 0 0 1 8 99 46 46 0 0 1-6 24z" fill="#0e1c31" stroke="#49caff" stroke-width="3"/>
+<path d="M230 268v64M206 312l24 24 24-24" stroke="#7fd4ff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="120" y="416" fill="#eaf6ff" font-size="21" font-weight="700">1. Download</text>
+<text x="120" y="446" fill="#7f9cbd" font-size="17">HasseenaA1-Mission-Control</text>
+<text x="120" y="472" fill="#7f9cbd" font-size="17">-debug.apk (27 MB)</text>
+<path d="M360 300h90" stroke="#7fd4ff" stroke-width="4" stroke-linecap="round"/><path d="M436 292l14 8-14 8z" fill="#7fd4ff"/>
+<rect x="490" y="150" width="330" height="470" rx="30" fill="#0b1526" stroke="#2f5f86" stroke-width="3"/>
+<rect x="512" y="184" width="286" height="402" rx="16" fill="#0a1424"/>
+<rect x="580" y="162" width="150" height="10" rx="5" fill="#1c3a58"/>
+<path d="M655 240l40 16v34c0 30-20 52-40 62-20-10-40-32-40-62v-34z" fill="#0f3b5c" stroke="#62d58a" stroke-width="3"/>
+<path d="M639 284l12 12 24-26" stroke="#62d58a" stroke-width="5" fill="none" stroke-linecap="round"/>
+<text x="546" y="384" fill="#eaf6ff" font-size="22" font-weight="700">Install Hasseena A1?</text>
+<text x="546" y="416" fill="#7f9cbd" font-size="16">No risky permissions required to start</text>
+<rect x="546" y="440" width="130" height="44" rx="22" fill="#0f3b5c" stroke="#49caff" stroke-width="2"/><text x="584" y="468" fill="#7fd4ff" font-size="17" font-weight="700">INSTALL</text>
+<rect x="694" y="440" width="104" height="44" rx="22" fill="#0e1c31" stroke="#3d5f85"/><text x="722" y="468" fill="#7f9cbd" font-size="17">CANCEL</text>
+<rect x="546" y="512" width="252" height="52" rx="14" fill="#0e1c31" stroke="#2f5f86"/>
+<text x="562" y="544" fill="#cfe6f8" font-size="16">Unknown apps allowed</text>
+<rect x="740" y="524" width="44" height="28" rx="14" fill="#0f3b5c" stroke="#49caff" stroke-width="2"/><circle cx="771" cy="538" r="10" fill="#7fd4ff"/>
+<path d="M850 300h90" stroke="#7fd4ff" stroke-width="4" stroke-linecap="round"/><path d="M926 292l14 8-14 8z" fill="#7fd4ff"/>
+<g transform="translate(960,190)"><rect width="190" height="120" rx="16" fill="#0e1c31" stroke="#2f5f86" stroke-width="2"/><circle cx="44" cy="60" r="20" fill="none" stroke="#7fd4ff" stroke-width="3"/><path d="M44 50v12M44 70v2" stroke="#7fd4ff" stroke-width="3" stroke-linecap="round"/><text x="76" y="56" fill="#eaf6ff" font-size="17" font-weight="700">3. Setup</text><text x="76" y="82" fill="#7f9cbd" font-size="15">provider key</text></g>
+<g transform="translate(960,340)"><rect width="190" height="120" rx="16" fill="#0e1c31" stroke="#2f5f86" stroke-width="2"/><path d="M40 44c10-8 24-8 34 0M46 66c7-6 17-6 24 0" stroke="#7fd4ff" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="58" cy="54" r="14" fill="none" stroke="#7fd4ff" stroke-width="3"/><text x="86" y="56" fill="#eaf6ff" font-size="17" font-weight="700">4. Chat</text><text x="86" y="82" fill="#7f9cbd" font-size="15">voice + missions</text></g>
+<text x="52" y="646" fill="#8fb6d9" font-size="19">Debug-signed &#183; Android 7.0+ (API 24) &#183; updates install over the existing app</text>
+</g>
+</svg>
